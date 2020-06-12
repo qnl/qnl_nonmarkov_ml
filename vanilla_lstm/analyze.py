@@ -10,8 +10,8 @@ from qnl_trajectories.utils import greek
 from qnl_trajectories.nn_plotting import *
 from qnl_trajectories import x_color, y_color, z_color
 
-from .utils import *
-from .vanilla_lstm import *
+from utils import *
+from vanilla_lstm import *
 from rich import print
 from rich.console import Console
 console = Console()
@@ -22,8 +22,8 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 # Must be <= the last strong readout point
 last_timestep = 39
 
-datapath = r"/data/multi_prep_state/prep_-Z" # Path of the data
-filepath = r"/analysis/multi_prep_state/200523_220233_multi_prep_state_prep_-Z" # Path of the trained trajectories
+datapath = r"data/cts_rabi_amp_6/prep_Y" # Path of the data
+filepath = r"analysis/rabi_amp_sweep/200612_113539_cts_rabi_amp_6_prep_+Y" # Path of the trained trajectories
 
 arrow_length_multiplier = 1.25 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
 ROTATION_ANGLE = 0 # Rotation angle of the data
