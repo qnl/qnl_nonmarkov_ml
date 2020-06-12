@@ -2,11 +2,12 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras import backend as K
-from .callbacks import TrainingPlot
+from callbacks import TrainingPlot
 from matplotlib import pyplot as plt
 from matplotlib import colors
-import os, time, scipy, h5py
-from .utils import x_color, y_color, z_color
+import os, time, h5py
+from scipy.optimize import curve_fit
+from utils import x_color, y_color, z_color
 
 def get_trajectories_within_window(predictions, target_value, RO_results, pass_window=0.025, verbose=True):
     # Select traces where the final index is within Z +/- the pass_window
@@ -145,13 +146,13 @@ class MultiTimeStep():
 
     def fit_model(self, epochs, verbose_level=1):
         LRScheduler = tf.keras.callbacks.LearningRateScheduler(self.learning_rate_schedule)
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=self.savepath, histogram_freq=1)
 
         history = self.model.fit(self.training_features, self.training_labels, epochs=epochs,
                                  batch_size=self.mini_batch_size,
                                  validation_data=(self.validation_features, self.validation_labels),
                                  verbose=verbose_level, shuffle=True,
-                                 callbacks=[TrainingPlot(),
-                                            LRScheduler,
+                                 callbacks=[tensorboard_callback, TrainingPlot(), LRScheduler,
                                             ValidationPlot(self.validation_features,
                                                            self.validation_labels, self.mini_batch_size,
                                                            self.expX, self.expY, self.expZ, self.savepath),
@@ -462,11 +463,11 @@ def _simple_line(x, *p):
 
 def weighted_line_fit(xdata, ydata, yerr, guess_slope, guess_offset):
     try:
-        popt, pcov = scipy.optimize.curve_fit(_simple_line, xdata, ydata, p0=[guess_slope, guess_offset],
+        popt, pcov = curve_fit(_simple_line, xdata, ydata, p0=[guess_slope, guess_offset],
                                               sigma=yerr, absolute_sigma=True, check_finite=True,
                                               bounds=(-np.inf, np.inf), method=None, jac=None)
     except RuntimeError:
-        popt, pcov = scipy.optimize.curve_fit(_simple_line, xdata, ydata, p0=[guess_slope, guess_offset])
+        popt, pcov = curve_fit(_simple_line, xdata, ydata, p0=[guess_slope, guess_offset])
 
     perr = np.sqrt(np.diag(pcov))
 
