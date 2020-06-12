@@ -22,15 +22,29 @@ To initiate the training, make sure the your paths in train.py and settings are 
 
 ```python train.py```
 
-This starts the training. You can now track progress in your visdom server window at `localhost:8097`. 
+This starts the training. You can now track progress in your visdom server window at `localhost:8097`:
+
 ![Accuracy](accuracy_example.png)
-Upon completion of the training we save a file `trajectories.h5` in the analysis folder, which is used as input for analyze.py.
-We also pass the validation data through the network again to create a few diagnostics, which are explained below. 
+
+Upon completion of the training the code saves a file `trajectories.h5` in the analysis folder, which is used as input for analyze.py. We also pass the validation data through the network again to create a few diagnostics, which are explained below. 
 
 ## Diagnostics
+Besides training loss and accuracy there are two main diagnostics to determine whether the training has succeeded or failed. The first diagnostic is the validation error, shown below.
 
 ![Verification](verification_example.png)
-First it compares the predictions of the model (from validation data) to the strong readout results for all three measurement axes x, y and z. Ideally, this line should have slope 1 and the error is defined as the deviation from unit slope.
+
+This metric compares the predictions of the model (from validation data) to the strong readout results for all three measurement axes x, y and z. Ideally, this line should have slope 1 and the error is defined as the deviation from unit slope.
+
+The second metric is a visual inspection of a histogram of the trajectories, again shown below.
 
 ![Verification](histogram_example.png)
-We also create a histogram of validation trajectories and overlay the averaged strong readout results. Ideally, the averaged strong readout results should follow the mean of the histogram at each timestep.
+
+The histogram of validation trajectories is overlayed with the averaged strong readout results. Ideally, the averaged strong readout results should follow the mean of the histogram at each timestep.
+
+## Further analysis
+
+To run an extended analysis, including fitting of the data we run
+
+```python analyze.py```
+
+Of course, make sure that the paths in analyze.py point to the appropriate data and analysis folders. The analysis first compares average trajectories to the strong readout results, and then fits a model to the average incremental changes dX, dY and dZ along trajectories to obtain parameters in the Hamiltonian. It also looks at the variance of the incremental changes to analyze the measurement back-action. Finally it has the ability to look at the average increments and variance of the increments as function of time.
