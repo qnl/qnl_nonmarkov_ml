@@ -7,7 +7,7 @@ console = Console()
 sys.path.append(r"/home/qnl/Git-repositories")
 from qnl_trajectories.analysis import data_analysis
 from .utils import *
-from vanilla_lstm import *
+from .vanilla_lstm import pad_labels
 
 dark_mode_compatible(dark_mode_color=r'#86888A')
 
