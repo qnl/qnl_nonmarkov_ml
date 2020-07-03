@@ -4,7 +4,6 @@ import tensorflow as tf
 from rich.console import Console
 console = Console()
 
-sys.path.append(r"/home/qnl/Git-repositories")
 from qnl_trajectories.analysis import data_analysis
 from .utils import *
 from .vanilla_lstm import pad_labels
