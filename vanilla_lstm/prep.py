@@ -13,20 +13,24 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r"data/cts_rabi_amp_6/prep_Y"
+filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_0/prep_C+X_T+X"
+meas_X = r"meas_C+Z_T+Y"
+meas_Y = r"meas_C+Z_T+Y"
+meas_Z = r"meas_C+Z_T+Y"
+
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
 last_timestep = 39
-mask_value = -1.0 # This is the mask value for the data, not the missing labels
-num_features = 2 # I and Q
-strong_ro_dt = 200e-9 # Time interval for strong readout in the dataset in seconds
+mask_value = -1.0  # This is the mask value for the data, not the missing labels
+num_features = 2  # I and Q
+strong_ro_dt = 200e-9  # Time interval for strong readout in the dataset in seconds
 
 console.print("Loading data...", style="bold red")
 
 # Load the data from the pickle files.
-dX = data_analysis.load_data(os.path.join(filepath, 'meas_X'), last_timestep=last_timestep, qubit='Q6')
-dY = data_analysis.load_data(os.path.join(filepath, 'meas_Y'), last_timestep=last_timestep, qubit='Q6')
-dZ = data_analysis.load_data(os.path.join(filepath, 'meas_Z'), last_timestep=last_timestep, qubit='Q6')
+dX = data_analysis.load_data(os.path.join(filepath, meas_X), last_timestep=last_timestep, qubit='Q6')
+dY = data_analysis.load_data(os.path.join(filepath, meas_Y), last_timestep=last_timestep, qubit='Q6')
+dZ = data_analysis.load_data(os.path.join(filepath, meas_Z), last_timestep=last_timestep, qubit='Q6')
 
 # Get the expectation value from the data containers for each measurement axis.
 Tm, expX, expY, expZ = data_analysis.plot_average_trajectories(dX, dY, dZ,
