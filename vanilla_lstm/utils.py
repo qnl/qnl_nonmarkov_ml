@@ -6,6 +6,7 @@ x_color = plt.cm.Reds(0.6)
 y_color = plt.cm.Blues(0.6)
 z_color = plt.cm.Greys(0.6)
 
+
 def dark_mode_compatible(dark_mode_color=r'#86888A'):
     matplotlib.rc('axes', edgecolor=dark_mode_color)
     matplotlib.rc('text', color=dark_mode_color)
@@ -15,6 +16,7 @@ def dark_mode_compatible(dark_mode_color=r'#86888A'):
     matplotlib.rc('axes', facecolor='none')
     matplotlib.rc('figure', edgecolor='none')  # .edgecolor', (1, 1, 1, 0))
     matplotlib.rc('figure', facecolor='none')  # (1, 1, 1, 0))
+
 
 def split_data(I, Q, labels, training_fraction, rep_list):
     new_timestep_idcs = [0] + np.cumsum(rep_list).tolist()
@@ -53,6 +55,7 @@ def split_data(I, Q, labels, training_fraction, rep_list):
 
     return train_x, train_y, valid_x, valid_y
 
+
 def split_data_same_each_time(I, Q, labels, training_fraction, start_idx=0):
     total_batch_size, sequence_length = np.shape(I)
     val_each_n = int(1 / (1 - training_fraction))
@@ -77,6 +80,7 @@ def split_data_same_each_time(I, Q, labels, training_fraction, start_idx=0):
     valid_y = labels[validation_idcs, :].astype(np.int)
 
     return train_x, train_y, valid_x, valid_y
+
 
 def get_data(data_dict, axis, timesteps, scaling=1.0, label_mask_value=-1, take_max=np.inf):
     raw_I = list()
