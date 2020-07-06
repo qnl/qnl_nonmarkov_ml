@@ -4,8 +4,10 @@ import h5py
 import numpy as np
 import tensorflow as tf
 from qnl_trajectories.analysis import data_analysis
-from .utils import *
-from .vanilla_lstm import pad_labels
+# from .utils import *
+from utils import *
+# from .vanilla_lstm import pad_labels
+from vanilla_lstm import pad_labels
 from rich.console import Console
 console = Console()
 
@@ -20,7 +22,7 @@ meas_Z = r"meas_C+Z_T+Y"
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-last_timestep = 39
+last_timestep = 24
 mask_value = -1.0  # This is the mask value for the data, not the missing labels
 num_features = 2  # I and Q
 strong_ro_dt = 200e-9  # Time interval for strong readout in the dataset in seconds
@@ -28,9 +30,9 @@ strong_ro_dt = 200e-9  # Time interval for strong readout in the dataset in seco
 console.print("Loading data...", style="bold red")
 
 # Load the data from the pickle files.
-dX = data_analysis.load_data(os.path.join(filepath, meas_X), last_timestep=last_timestep, qubit='Q6')
-dY = data_analysis.load_data(os.path.join(filepath, meas_Y), last_timestep=last_timestep, qubit='Q6')
-dZ = data_analysis.load_data(os.path.join(filepath, meas_Z), last_timestep=last_timestep, qubit='Q6')
+dX = data_analysis.load_data(os.path.join(filepath, meas_X), qubit='Q6', method='final')
+dY = data_analysis.load_data(os.path.join(filepath, meas_Y), qubit='Q6', method='final')
+dZ = data_analysis.load_data(os.path.join(filepath, meas_Z), qubit='Q6', method='final')
 
 # Get the expectation value from the data containers for each measurement axis.
 Tm, expX, expY, expZ = data_analysis.plot_average_trajectories(dX, dY, dZ,
