@@ -19,12 +19,12 @@ tf.debugging.set_log_device_placement(False)
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r"data/cts_rabi_amp_6/prep_Y"
+filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_0/prep_C+X_T+X"
 prep_state = "+Y" # Prep state, VERY IMPORTANT
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-last_timestep = 39
+last_timestep = 24
 mask_value = -1.0 # This is the mask value for the data, not the missing labels
 total_epochs = 20 # Number of epochs for the training
 mini_batch_size = 1024 # Batch size
@@ -57,6 +57,7 @@ with h5py.File(os.path.join(filepath, 'training_validation_split.h5'), "r") as f
 
 # Initialize the model
 console.print("Creating model...", style="bold red")
+print(train_x.shape, train_y.shape, valid_x.shape, valid_y.shape,)
 m = MultiTimeStep(train_x, train_y, valid_x, valid_y, prep_state,
                   lstm_neurons=lstm_neurons, mini_batch_size=mini_batch_size, expX=expX, expY=expY, expZ=expZ,
                   savepath=model_savepath, experiment_name=experiment_name)
