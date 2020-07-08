@@ -499,7 +499,8 @@ def plot_histogram(weak_meas_times, X, Y, Z, tomography_times, expX, expY, expZ,
 
     plt.subplot(3, 1, 1)
     plt.pcolormesh(weak_meas_times * 1e6, bins, histZ, cmap=cmap, norm=colors.LogNorm(vmin=5, vmax=histZ.max()))
-    plt.plot(tomography_times * 1e6, expZ, '-', color='k')
+    # plt.plot(tomography_times * 1e6, expZ, '-', color='k')
+    plt.plot(tomography_times * 1e6, expZ, '-', color='cornflowerblue')
     cbar = plt.colorbar()
     cbar.ax.set_ylabel(f"Probability (bin size {np.diff(bins)[0]:.2f})")
     plt.ylabel(r"$Z$")
@@ -507,7 +508,8 @@ def plot_histogram(weak_meas_times, X, Y, Z, tomography_times, expX, expY, expZ,
 
     plt.subplot(3, 1, 2)
     plt.pcolormesh(weak_meas_times * 1e6, bins, histY, cmap=cmap, norm=colors.LogNorm(vmin=5, vmax=histY.max()))
-    plt.plot(tomography_times * 1e6, expY, '-', color='k')
+    # plt.plot(tomography_times * 1e6, expY, '-', color='k')
+    plt.plot(tomography_times * 1e6, expY, '-', color='cornflowerblue')
     cbar = plt.colorbar()
     cbar.ax.set_ylabel(f"Probability (bin size {np.diff(bins)[0]:.2f})")
     plt.ylabel(r"$Y$")
@@ -515,7 +517,8 @@ def plot_histogram(weak_meas_times, X, Y, Z, tomography_times, expX, expY, expZ,
 
     plt.subplot(3, 1, 3)
     plt.pcolormesh(weak_meas_times * 1e6, bins, histX, cmap=cmap, norm=colors.LogNorm(vmin=5, vmax=histX.max()))
-    plt.plot(tomography_times * 1e6, expX, '-', color='k')
+    # plt.plot(tomography_times * 1e6, expX, '-', color='k')
+    plt.plot(tomography_times * 1e6, expX, '-', color='cornflowerblue')
     cbar = plt.colorbar()
     cbar.ax.set_ylabel(f"Probability (bin size {np.diff(bins)[0]:.2f})")
     plt.ylabel(r"$X$")
