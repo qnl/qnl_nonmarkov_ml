@@ -4,13 +4,12 @@ import numpy as np
 from tqdm import tqdm, trange
 import matplotlib
 
-sys.path.append(r"/home/qnl/Git-repositories")
-from qnl_trajectories import data_analysis
-from qnl_trajectories.utils import greek
-from qnl_trajectories.nn_plotting import *
+from qnl_trajectories.analysis import data_analysis
+from qnl_trajectories.analysis.utils import greek
+from qnl_trajectories.analysis.nn_plotting import *
 from qnl_trajectories import x_color, y_color, z_color
 
-from utils import *
+from qnl_nonmarkov_ml.vanilla_lstm.utils import *
 from vanilla_lstm import *
 from rich import print
 from rich.console import Console
@@ -22,8 +21,8 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 # Must be <= the last strong readout point
 last_timestep = 39
 
-datapath = r"data/cts_rabi_amp_6/prep_Y" # Path of the data
-filepath = r"analysis/rabi_amp_sweep/200612_113539_cts_rabi_amp_6_prep_+Y" # Path of the trained trajectories
+datapath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_0/prep_C+X_T+X" # Path of the data
+filepath = r"analysis/rabi_amp_sweep/200707_161016_phase_0_prep_+Y" # Path of the trained trajectories
 
 arrow_length_multiplier = 1.25 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
 ROTATION_ANGLE = 0 # Rotation angle of the data
