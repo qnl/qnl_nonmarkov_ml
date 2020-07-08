@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 from qnl_trajectories.analysis import data_analysis
 # from .utils import *
-from utils import *
+from qnl_nonmarkov_ml.vanilla_lstm.utils import *
 # from .vanilla_lstm import pad_labels
-from vanilla_lstm import pad_labels
+from qnl_nonmarkov_ml.vanilla_lstm.vanilla_lstm import pad_labels
+from qnl_nonmarkov_ml.vanilla_lstm.formatting_fixes.data_filters import DataFilters as df
 from rich.console import Console
 console = Console()
 
@@ -15,10 +16,10 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_0/prep_C+X_T+X"
-meas_X = r"meas_C+Z_T+Y"
+filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_7/prep_C+X_T+X"
+meas_X = r"meas_C+Z_T+X"
 meas_Y = r"meas_C+Z_T+Y"
-meas_Z = r"meas_C+Z_T+Y"
+meas_Z = r"meas_C+Z_T+Z"
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
@@ -33,6 +34,10 @@ console.print("Loading data...", style="bold red")
 dX = data_analysis.load_data(os.path.join(filepath, meas_X), qubit='Q6', method='final')
 dY = data_analysis.load_data(os.path.join(filepath, meas_Y), qubit='Q6', method='final')
 dZ = data_analysis.load_data(os.path.join(filepath, meas_Z), qubit='Q6', method='final')
+
+dX = df.correct_timestep(dX)
+dY = df.correct_timestep(dY)
+dZ = df.correct_timestep(dZ)
 
 # Get the expectation value from the data containers for each measurement axis.
 Tm, expX, expY, expZ = data_analysis.plot_average_trajectories(dX, dY, dZ,
