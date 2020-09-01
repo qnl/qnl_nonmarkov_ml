@@ -5,21 +5,23 @@ from rich.console import Console
 console = Console()
 
 sys.path.append(r"/home/qnl/Git-repositories")
-from utils import load_repackaged_data, get_data, split_data_same_each_time, dark_mode_compatible
+from utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, dark_mode_compatible
 from qutrit_lstm_network import pad_labels
 
 dark_mode_compatible(dark_mode_color=r'#86888A')
 
+settings = load_settings(r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/qutrit_lstm/settings.yaml")
+
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r"/media/qnl/Extreme SSD/Continuous rabi drive/2020_08_26/cts_rabi_qutrit_ge_amp_0.0031_ef_amp_0.0000"
-filename = r"cts_rabi_prep_g_ef_amp_0.0000_meas_XYZ.h5"
+filepath = settings['voltage_records']['filepath']
+filename = settings['voltage_records']['filename']
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-mask_value = -1.0 # This is the mask value for the data, not the missing labels
-num_features = 2 # I and Q
-strong_ro_dt = 200e-9 # Time interval for strong readout in the dataset in seconds
+mask_value = settings['training']['mask_value'] # This is the mask value for the data, not the missing labels
+num_features = settings['voltage_records']['num_features'] # I and Q
+strong_ro_dt = settings['voltage_records']['strong_ro_dt'] # Time interval for strong readout in the dataset in seconds
 
 console.print("Loading data...", style="bold red")
 
@@ -46,9 +48,10 @@ Tm = timesteps * strong_ro_dt
 console.print("Dividing data in training and validation sets...", style="bold red")
 
 # Extract the I and Q voltage records and apply a scaling
-rawX_I, rawX_Q, labelsX, reps_per_timestepX = get_data(dX, 'X', timesteps, scaling=0.005)
-rawY_I, rawY_Q, labelsY, reps_per_timestepY = get_data(dY, 'Y', timesteps, scaling=0.005)
-rawZ_I, rawZ_Q, labelsZ, reps_per_timestepZ = get_data(dZ, 'Z', timesteps, scaling=0.005)
+scaling = settings['prep']['iq_scaling']
+rawX_I, rawX_Q, labelsX, reps_per_timestepX = get_data(dX, 'X', timesteps, scaling=scaling)
+rawY_I, rawY_Q, labelsY, reps_per_timestepY = get_data(dY, 'Y', timesteps, scaling=scaling)
+rawZ_I, rawZ_Q, labelsZ, reps_per_timestepZ = get_data(dZ, 'Z', timesteps, scaling=scaling)
 
 # Append I and Q voltage records from different measurement axes
 raw_I = rawX_I + rawY_I + rawZ_I
@@ -70,12 +73,15 @@ padded_Q = tf.keras.preprocessing.sequence.pad_sequences(raw_Q, padding='post',
 batch_size, sequence_length = np.shape(padded_I)
 
 # Pad the labels such that they can be processed by the NN later
-padded_labels = pad_labels(labels, (1 + int(strong_ro_dt/dt) * np.array(timesteps)).tolist() * 3,
+n = settings['voltage_records']['data_points_for_prep_state']
+padded_labels = pad_labels(labels, (n + int(strong_ro_dt/dt) * np.array(timesteps)).tolist() * 3,
                            reps_per_timestep, mask_value)
 
 # Split validation and data deterministically so we can compare results from run to run
 train_x, train_y, valid_x, valid_y = split_data_same_each_time(padded_I.astype(np.float32), padded_Q.astype(np.float32),
-                                                               padded_labels, 0.90, start_idx=0)
+                                                               padded_labels,
+                                                               settings['prep']['training_validation_ratio'],
+                                                               start_idx=0)
 
 train_msk = train_x != mask_value
 valid_msk = valid_x != mask_value
@@ -87,7 +93,7 @@ train_time_series_lengths = np.sum(train_msk[:, :, 0], axis=1)
 
 # Save a pre-processed file as an h5 file. Note these files can be quite large, typ. 15 GB.
 console.print(f"Saving processed data to {filepath}...", style="bold red")
-output_filename = os.path.join(filepath, "training_validation_split.h5")
+output_filename = os.path.join(filepath, settings['prep']['output_filename'])
 if os.path.exists(output_filename):
     os.remove(output_filename)
 

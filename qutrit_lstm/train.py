@@ -6,11 +6,14 @@ from rich import print
 from rich.console import Console
 console = Console()
 import matplotlib.pyplot as plt
-from utils import dark_mode_compatible, save_options
+from utils import dark_mode_compatible, load_settings, save_settings
 from qutrit_lstm_network import MultiTimeStep, make_a_pie, pairwise_softmax, get_xyz, get_histogram, plot_histogram
 from qutrit_lstm_network import plot_verification
 
 dark_mode_compatible(dark_mode_color=r'#86888A')
+
+yaml_file = r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/qutrit_lstm/settings.yaml"
+settings = load_settings(yaml_file)
 
 print(tf.config.experimental.list_physical_devices('CPU'))
 print(tf.config.experimental.list_physical_devices('GPU'))
@@ -20,17 +23,17 @@ tf.debugging.set_log_device_placement(False)
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r"/media/qnl/Extreme SSD/Continuous rabi drive/2020_08_26/cts_rabi_qutrit_ge_amp_0.0031_ef_amp_0.0000"
-prep_state = "+Z" # Prep state, VERY IMPORTANT
-experiment_name = f"drive_GE_prep_{prep_state}"
+filepath = settings['voltage_records']['filepath']
+prep_state = settings['voltage_records']['prep_state'] # Prep state, VERY IMPORTANT
+experiment_name = settings['training']['experiment_id']
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-mask_value = -1.0 # This is the mask value for the data, not the missing labels
-total_epochs = 20 # Number of epochs for the training
-mini_batch_size = 1024 # Batch size
-lstm_neurons = 32 # Depth of the LSTM layer
-strong_ro_dt = 200e-9 # Time interval for strong readout in the dataset in seconds
+mask_value = settings['training']['mask_value'] # This is the mask value for the data, not the missing labels
+total_epochs = settings['training']['epochs'] # Number of epochs for the training
+mini_batch_size = settings['training']['mini_batch_size'] # Batch size
+lstm_neurons = settings['training']['lstm_neurons'] # Depth of the LSTM layer
+strong_ro_dt = settings['voltage_records']['strong_ro_dt'] # Time interval for strong readout in the dataset in seconds
 
 # This is where the trained trajectories will be saved to
 model_savepath = os.path.join(filepath, "analysis")
@@ -38,7 +41,7 @@ if not(os.path.exists(model_savepath)):
     os.makedirs(model_savepath)
 
 # Load the data prepaired in prep.py
-with h5py.File(os.path.join(filepath, 'training_validation_split.h5'), "r") as f:
+with h5py.File(os.path.join(filepath, settings['prep']['output_filename']), "r") as f:
     train_x = f.get('train_x')[:]
     train_y = f.get('train_y')[:]
     valid_x = f.get('valid_x')[:]
@@ -62,6 +65,9 @@ m = MultiTimeStep(train_x, train_y, valid_x, valid_y, prep_state,
                   lstm_neurons=lstm_neurons, mini_batch_size=mini_batch_size, expX=expX, expY=expY, expZ=expZ,
                   savepath=model_savepath, experiment_name=experiment_name)
 
+settings['analysis']['subdir'] = m.savepath
+save_settings(yaml_file, settings)
+
 # Check if the training data is equally distributed: whether it has equal number of sequence lengths and meas. axes
 make_a_pie(all_time_series_lengths, "All data - sequence lengths", savepath=m.savepath)
 make_a_pie(train_time_series_lengths, "Training data - sequence lengths", savepath=m.savepath)
@@ -70,6 +76,7 @@ make_a_pie(valid_time_series_lengths, "Validation data - sequence lengths", save
 # Copy the script to the analysis folder to keep track of settings
 this_script = "train.py"
 copyfile(this_script, os.path.join(m.savepath, this_script))
+copyfile(yaml_file, os.path.join(m.savepath, os.path.split(yaml_file)[-1]))
 
 # Plot the learning rate settings etc.
 epochs = np.arange(total_epochs)
@@ -83,7 +90,7 @@ plt.xlabel("Number of epochs")
 plt.ylabel("Scheduled learning rate")
 
 if m.savepath is not None:
-    fig.savefig(os.path.join(m.savepath, "000_learning_rate.png"), **save_options)
+    fig.savefig(os.path.join(m.savepath, "000_learning_rate.png"), **settings['figure_options'])
 
 fig = plt.figure()
 plt.plot(epochs, dropout_rate)
@@ -92,7 +99,7 @@ plt.xlabel("Number of epochs")
 plt.ylabel("Scheduled dropout rate")
 
 if m.savepath is not None:
-    fig.savefig(os.path.join(m.savepath, "000_dropout_rate.png"), **save_options)
+    fig.savefig(os.path.join(m.savepath, "000_dropout_rate.png"), **settings['figure_options'])
 
 console.print("Building model...", style="bold red")
 m.build_model()
@@ -129,13 +136,13 @@ fig = plot_histogram(time_axis, xyz_pred[last_time_idcs, :, 0],
                      xyz_pred[last_time_idcs, :, 1], xyz_pred[last_time_idcs, :, 2],
                      Tm, expX, expY, expZ)
 if m.savepath is not None:
-    fig.savefig(os.path.join(m.savepath, "000_histogram.png"), **save_options)
+    fig.savefig(os.path.join(m.savepath, "000_histogram.png"), **settings['figure_options'])
 
 m.save_trajectories(time_axis, xyz_pred, valid_time_series_lengths)
 
 fig = plot_verification(y_pred_probabilities, valid_y)
 if m.savepath is not None:
-    fig.savefig(os.path.join(m.savepath, "verification_on_validation_data.png"), **save_options)
+    fig.savefig(os.path.join(m.savepath, "verification_on_validation_data.png"), **settings['figure_options'])
 
 plt.close('all')
 

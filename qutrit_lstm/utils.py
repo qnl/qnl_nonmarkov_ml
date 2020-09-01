@@ -1,7 +1,7 @@
 import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
-import h5py
+import h5py, yaml
 
 x_color = plt.cm.Reds(0.6)
 y_color = plt.cm.Blues(0.6)
@@ -11,6 +11,15 @@ save_options = {"dpi" : 200,
                 "bbox_inches" : "tight",
                 "pad_inches" : 0.05,
                 "transparent" : True}
+
+def load_settings(yaml_path):
+    with open(yaml_path) as file:
+        data = yaml.load(file, Loader=yaml.FullLoader)
+    return data
+
+def save_settings(yaml_path, settings_dict):
+    with open(yaml_path, 'w') as file:
+        yaml.dump(settings_dict, file, sort_keys=True)
 
 def load_repackaged_data(filename):
     """
