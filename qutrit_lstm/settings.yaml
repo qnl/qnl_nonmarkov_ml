@@ -1,23 +1,23 @@
 analysis:
-  subdir: /media/qnl/Extreme SSD/Continuous rabi drive/2020_08_28/cts_rabi_qutrit_ge_amp_0.0031_ef_amp_0.0000/analysis/200831_134214_drive_GE_prep_g
-  t_min: null
-  t_max: null
+  backaction_map:
+    arrow_length_multiplier: 1.5
+    color_max: 0.06
+    color_min: 0.0
+  bin_size: 0.1
   derivative_order: 1
-  bin_size: 0.10
-  sweep_time: false
-  x_for_yz_fit: null
-  y_for_xz_fit: null
-  z_for_xy_fit: null
   hamiltonian_map:
-    omega_fixed: false
     arrow_length_multiplier: 1.25
     fit_guess:
-      - 0.1e+6
-      - 0.43e+6
-  backaction_map:
-    arrow_length_multiplier: 2.50
-    color_min: 0.00
-    color_max: 0.06
+    - 100000.0
+    - 430000.0
+    omega_fixed: false
+  subdir: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_01/cts_rabi_qutrit_ge_amp_0.0051_ef_amp_0.0000/analysis/200901_115237_drive_GE_prep_g
+  sweep_time: false
+  t_max: null
+  t_min: null
+  x_for_yz_fit: null
+  y_for_xz_fit: 0.0
+  z_for_xy_fit: 0.0
 figure_options:
   bbox_inches: tight
   dpi: 200
@@ -35,8 +35,8 @@ training:
   mini_batch_size: 1024
 voltage_records:
   data_points_for_prep_state: 1
-  filename: cts_rabi_prep_g_ef_amp_0.0000_meas_XYZ_updated_delays.h5
-  filepath: /media/qnl/Extreme SSD/Continuous rabi drive/2020_08_28/cts_rabi_qutrit_ge_amp_0.0031_ef_amp_0.0000
+  filename: cts_rabi_qutrit_ge_amp_0.0051_ef_amp_0.0000_meas_XYZ.h5
+  filepath: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_01/cts_rabi_qutrit_ge_amp_0.0051_ef_amp_0.0000
   num_features: 2
   prep_state: +Z
   strong_ro_dt: 2.0e-07
