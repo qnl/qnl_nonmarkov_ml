@@ -66,6 +66,7 @@ m = MultiTimeStep(train_x, train_y, valid_x, valid_y, prep_state,
                   savepath=model_savepath, experiment_name=experiment_name)
 
 settings['analysis']['subdir'] = m.savepath
+settings['analysis']['trajectory_dt'] = float(dt)
 save_settings(yaml_file, settings)
 
 # Check if the training data is equally distributed: whether it has equal number of sequence lengths and meas. axes
@@ -124,7 +125,9 @@ y_pred = m.model.predict(valid_x)
 y_pred_probabilities = pairwise_softmax(y_pred)
 xyz_pred = get_xyz(pairwise_softmax(y_pred))
 last_time_idcs = np.where(valid_time_series_lengths == valid_time_series_lengths[-1])[0]
-time_axis = np.arange(dt, tfinal + dt, dt)[:np.shape(xyz_pred)[1]]
+time_axis = np.arange(dt - settings['voltage_records']['data_points_for_prep_state']*dt,
+                      tfinal + dt, dt)#[:np.shape(xyz_pred)[1]]
+print(len(time_axis), np.shape(xyz_pred)[1])
 
 # Make a histogram of the validation trajectories
 bins, histX, histY, histZ = get_histogram(time_axis * 1e6,

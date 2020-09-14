@@ -25,8 +25,9 @@ filepath = os.path.join(datapath, 'analysis', settings['analysis']['subdir']) # 
 
 # arrow_length_multiplier = 1.25 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
 ROTATION_ANGLE = 0 # Rotation angle of the data
-seq_lengths = np.arange(26, 201, 5) # Sequence lengths to process for the quiver maps, in units of weak measurement dt
 strong_ro_dt = settings['voltage_records']['strong_ro_dt']
+trajectory_dt = settings['analysis']['trajectory_dt']
+n_init_pts = settings['voltage_records']['data_points_for_prep_state']
 fit_guess = settings['analysis']['hamiltonian_map']['fit_guess'] # Fit guess for Hamiltonian map fit, gamma, omega
 derivative_order = settings['analysis']['derivative_order']
 omega_fixed = settings['analysis']['hamiltonian_map']['omega_fixed']
@@ -61,6 +62,11 @@ expZ = 1 - 2 * Pz
 
 dt = dZ['t_0']['dt_binned']
 timesteps = np.sort([int(key[2:]) for key in list(dZ.keys()) if key[:2] == 't_'])
+# Sequence lengths to process for the quiver maps, in units of trajectory dt
+samples_per_strong_ro = int(np.round(strong_ro_dt / trajectory_dt))
+n_timesteps = len(timesteps)
+seq_lengths = np.arange(n_init_pts, n_init_pts + n_timesteps * samples_per_strong_ro, samples_per_strong_ro)
+
 Tm = timesteps * strong_ro_dt
 
 # Load the longest trained trajectories
@@ -68,6 +74,7 @@ with h5py.File(os.path.join(filepath, 'trajectories.h5'), 'r') as f:
     try:
         xyz_pred = f.get(f'predictions_{seq_lengths[-1]}')[:]
     except:
+        print(seq_lengths)
         print(list(f.keys()))
     time = f.get('t')[:]
 
