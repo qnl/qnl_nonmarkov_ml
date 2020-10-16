@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras import backend as K
-from callbacks import TrainingPlot
+from callbacks import TrainingPlot, LossTracker
 from matplotlib import pyplot as plt
 from matplotlib import colors
 import os, time, h5py
@@ -104,6 +104,22 @@ class MultiTimeStep():
             self.prep_x = [0.5, 0.5]
             self.prep_y = [0.5, 0.5]
             self.prep_z = [0.0, 1.0]
+        elif prep_state is None:
+            R0 = np.sqrt(expX[0] ** 2 + expY[0] ** 2 + expZ[0] ** 2)
+            X0 = expX[0] if R0 <= 1.0 else expX[0] / R0
+            Y0 = expY[0] if R0 <= 1.0 else expY[0] / R0
+            Z0 = expZ[0] if R0 <= 1.0 else expZ[0] / R0
+
+            px = 0.5 * (1 + X0)
+            py = 0.5 * (1 + Y0)
+            pz = 0.5 * (1 + Z0)
+            self.prep_x = [px, 1 - px]
+            self.prep_y = [py, 1 - py]
+            self.prep_z = [pz, 1 - pz]
+            print(f"Assumed prep state from strong RO results is: ({X0:.3f}, {Y0:.3f}, {Z0:.3f})")
+            print(f"Purity of measured prep state was {R0:.4f}.")
+            if R0 >= 1.0:
+                print(f"Prep state has been automatically scaled such that purity = 1.")
         else:
             raise ValueError(f"Prep state {prep_state} is not yet supported in this model.")
 
@@ -147,12 +163,20 @@ class MultiTimeStep():
     def fit_model(self, epochs, verbose_level=1):
         LRScheduler = tf.keras.callbacks.LearningRateScheduler(self.learning_rate_schedule)
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=self.savepath, histogram_freq=1)
+        loss_tracker_callback = LossTracker(self.validation_features,
+                                            self.validation_labels,
+                                            mask_value=self.mask_value,
+                                            savepath=self.savepath,
+                                            prep_x=self.prep_x, prep_y=self.prep_y, prep_z=self.prep_z)
 
         history = self.model.fit(self.training_features, self.training_labels, epochs=epochs,
                                  batch_size=self.mini_batch_size,
                                  validation_data=(self.validation_features, self.validation_labels),
                                  verbose=verbose_level, shuffle=True,
-                                 callbacks=[tensorboard_callback, TrainingPlot(), LRScheduler,
+                                 callbacks=[tensorboard_callback,
+                                            TrainingPlot(),
+                                            LRScheduler,
+                                            loss_tracker_callback,
                                             ValidationPlot(self.validation_features,
                                                            self.validation_labels, self.mini_batch_size,
                                                            self.expX, self.expY, self.expZ, self.savepath),
@@ -181,7 +205,6 @@ class MultiTimeStep():
             print("Expected accuracy should converge to", expected_accuracy)
         return expected_accuracy
 
-
     def masked_loss_function(self, y_true, y_pred):
         batch_size = K.cast(K.shape(y_true)[0], K.floatx())
         # Finds out where a readout is available
@@ -197,6 +220,7 @@ class MultiTimeStep():
         # Do a softmax to get the predicted probabilities
         init_x = tf.repeat(tf.constant([self.prep_x], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
         init_x_pred = K.softmax(y_pred[:, 0, 0:2])
+        # todo: pull the 0 from the number of samples for the first timestep
 
         init_y = tf.repeat(tf.constant([self.prep_y], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
         init_y_pred = K.softmax(y_pred[:, 0, 2:4])
@@ -219,7 +243,7 @@ class MultiTimeStep():
         lagrange_2 = tf.constant(0.5, dtype=K.floatx())
         lagrange_3 = tf.constant(0.1, dtype=K.floatx())
 
-        return lagrange_1 * L_readout + lagrange_2 * L_init_state[0] + lagrange_3 * L_outside_sphere
+        return lagrange_1 * L_readout + lagrange_2 * L_init_state[0] + lagrange_3 * K.mean(L_outside_sphere)
 
     def masked_accuracy(self, y_true, y_pred):
         batch_size = K.shape(y_true)[0]
@@ -285,9 +309,18 @@ class MultiTimeStep():
         if self.savepath is not None:
             fig.savefig(os.path.join(self.savepath, "training_history_accuracy.png"), **save_options)
 
-    def save_trajectories(self, time, predictions, indices):
-        with h5py.File(os.path.join(self.savepath, "trajectories.h5"), 'w') as f:
+    def save_trajectories(self, time, predictions, indices, history):
+        with h5py.File(os.path.join(self.savepath, "trajectories.h5"), 'a') as f:
             f.create_dataset("t", data=time)
+
+            epochs = np.arange(1, 1 + len(history.history['loss']))
+            f.create_dataset(f"training/epochs", data=epochs)
+            # f.create_dataset(f"training/loss_components", data=self.model.losses)
+            for key in ["loss", "val_loss", "masked_accuracy", "val_masked_accuracy"]:
+                f.create_dataset(f"training/{key}", data=history.history[key])
+
+            learning_rate = np.array([self.learning_rate_schedule(e) for e in epochs])
+            f.create_dataset(f"training/learning_rate", data=learning_rate)
             unique_indices = np.unique(indices)
 
             for k in range(len(unique_indices)):
@@ -582,3 +615,45 @@ def make_a_pie(time_series_lengths, title="", savepath=None):
 
     if savepath is not None:
         fig.savefig(os.path.join(savepath, title.replace(" ", "_") + ".png"), **save_options)
+
+def loss_components(y_true, y_pred):
+    batch_size = np.shape(y_true)[0]
+    # Finds out where a readout is available
+    mask = K.cast(K.not_equal(y_true, self.mask_value), K.floatx())
+    # First do a softmax (when from_logits = True) and then calculate the cross-entropy: CE_i = -log(prob_i)
+    # where prob_i is the predicted probability for y_true_i = 1.0
+    pred_logits = K.reshape(tf.boolean_mask(y_pred, mask), (batch_size, 2))
+    true_probs = K.reshape(tf.boolean_mask(y_true, mask), (batch_size, 2))
+    CE = K.categorical_crossentropy(true_probs, pred_logits, from_logits=True)
+    L_readout = K.sum(CE) / batch_size
+
+    # Penalize deviation from the known initial state at the first time step
+    # Do a softmax to get the predicted probabilities
+    init_x = tf.repeat(tf.constant([self.prep_x], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
+    init_x_pred = K.softmax(y_pred[:, 0, 0:2])
+
+    init_y = tf.repeat(tf.constant([self.prep_y], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
+    init_y_pred = K.softmax(y_pred[:, 0, 2:4])
+
+    init_z = tf.repeat(tf.constant([self.prep_z], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
+    init_z_pred = K.softmax(y_pred[:, 0, 4:6])
+
+    L_init_state = K.sqrt(K.square(init_x - init_x_pred)[0] + \
+                          K.square(init_y - init_y_pred)[0] + \
+                          K.square(init_z - init_z_pred)[0])
+
+    # NEW
+    X_all_t = 1.0 - 2.0 * K.softmax(y_pred[:, :, 0:2], axis=-1)[:, :, 1]
+    Y_all_t = 1.0 - 2.0 * K.softmax(y_pred[:, :, 2:4], axis=-1)[:, :, 1]
+    Z_all_t = 1.0 - 2.0 * K.softmax(y_pred[:, :, 4:6], axis=-1)[:, :, 1]
+    L_outside_sphere = K.relu(K.sqrt(K.square(X_all_t) + K.square(Y_all_t) + K.square(Z_all_t)), threshold=1.0)
+
+    # Force the state of average readout results to be equal to the strong readout results.
+    lagrange_1 = tf.constant(1.0, dtype=K.floatx())
+    lagrange_2 = tf.constant(0.5, dtype=K.floatx())
+    lagrange_3 = tf.constant(0.1, dtype=K.floatx())
+
+    self.mini_batch_losses = np.vstack((self.mini_batch_losses,
+                                        np.array([L_readout, L_init_state, L_outside_sphere])))
+
+    return lagrange_1 * L_readout + lagrange_2 * L_init_state[0] + lagrange_3 * L_outside_sphere

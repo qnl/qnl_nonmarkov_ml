@@ -21,6 +21,11 @@ def save_settings(yaml_path, settings_dict):
     with open(yaml_path, 'w') as file:
         yaml.dump(settings_dict, file, sort_keys=True)
 
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
+
 def load_repackaged_data(filename):
     """
     Load the h5 file produced by filtering.repackage_raw_data

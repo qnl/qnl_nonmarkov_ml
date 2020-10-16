@@ -40,7 +40,7 @@ expX = 1 - 2 * Px
 expY = 1 - 2 * Py
 expZ = 1 - 2 * Pz
 
-dt = dZ['t_0']['dt_binned']
+dt = dZ['t_0']['dt_filtered']
 timesteps = np.sort([int(key[2:]) for key in list(dZ.keys()) if key[:2] == 't_'])
 tfinal = timesteps[-1] * strong_ro_dt
 Tm = timesteps * strong_ro_dt
@@ -71,11 +71,14 @@ padded_Q = tf.keras.preprocessing.sequence.pad_sequences(raw_Q, padding='post',
                                                          dtype='float32', value=mask_value)
 
 batch_size, sequence_length = np.shape(padded_I)
-
+print(np.shape(labels))
+print(strong_ro_dt/dt)
+print(len(timesteps))
 # Pad the labels such that they can be processed by the NN later
 n = settings['voltage_records']['data_points_for_prep_state']
 padded_labels = pad_labels(labels, (n + int(strong_ro_dt/dt) * np.array(timesteps)).tolist() * 3,
                            reps_per_timestep, mask_value)
+print(np.shape(padded_labels))
 
 # Split validation and data deterministically so we can compare results from run to run
 train_x, train_y, valid_x, valid_y = split_data_same_each_time(padded_I.astype(np.float32), padded_Q.astype(np.float32),
@@ -96,6 +99,9 @@ console.print(f"Saving processed data to {filepath}...", style="bold red")
 output_filename = os.path.join(filepath, settings['prep']['output_filename'])
 if os.path.exists(output_filename):
     os.remove(output_filename)
+
+print(np.shape(train_x), np.shape(train_y), np.shape(valid_x), np.shape(valid_y))
+assert np.shape(train_x)[1] == np.shape(valid_x)[1], "Shapes of train_x, valid_x are not right!"
 
 with h5py.File(output_filename, 'w') as f:
     f.create_dataset("train_x", data=train_x)

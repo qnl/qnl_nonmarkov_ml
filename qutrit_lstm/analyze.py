@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm, trange
 import matplotlib
+from scipy.linalg import sqrtm
 
 sys.path.append(r"/home/qnl/Git-repositories")
 from qnl_trajectories.analysis.utils import greek
 from qnl_trajectories.analysis.nn_plotting import *
-from qnl_trajectories import x_color, y_color, z_color
+from qnl_trajectories import x_color, y_color, z_color, Id, sigmaX, sigmaY, sigmaZ
 
 from utils import *
 from qutrit_lstm_network import *
@@ -36,8 +37,8 @@ t_max = settings['analysis']['t_max']
 
 sweep_time = settings['analysis']['sweep_time'] # Bin the trajectories in time to fit parameters as function of time.
 time_window = 0.2e-6 # Use this time window when sweep_time = True
-t_mins = np.arange(0.6e-6, 7.4e-6, time_window) # Left side of the time window
-t_maxs = np.arange(0.6e-6 + time_window, 7.4e-6 + time_window, time_window) # Right side of the time window
+t_mins = np.linspace(0.4e-6, 5.8e-6, 1 + np.int(np.round((5.8e-6 - 0.4e-6) / time_window))) # Left side of the time window
+t_maxs = t_mins + time_window # Right side of the time window
 
 x_for_yz_fit = settings['analysis']['x_for_yz_fit'] # Keep None if you don't want to select on the x coordinate
 y_for_xz_fit = settings['analysis']['y_for_xz_fit']
@@ -85,6 +86,26 @@ Xf = xyz_pred[..., 0]
 Yf = xyz_pred[..., 1]
 Zf = xyz_pred[..., 2]
 
+# Loop over the strong readout results to get the fidelity
+fidelities = list()
+trace_dist = list()
+for k, t in enumerate(Tm):
+    nearest_traj_idx = find_nearest(time, t)
+    rho_tilde = 0.5 * (Id + np.mean(Xf, axis=0)[nearest_traj_idx] * sigmaX +
+                       np.mean(Yf, axis=0)[nearest_traj_idx] * sigmaY +
+                       np.mean(Zf, axis=0)[nearest_traj_idx] * sigmaZ)
+
+    # Find the real density matrix from tomography results
+    rho = 0.5 * (Id + expX[k] * sigmaX + expY[k] * sigmaY + expZ[k] * sigmaZ)
+    fidelities.append(np.trace(sqrtm(sqrtm(rho) @ rho_tilde @ sqrtm(rho))) ** 2)
+    trace_dist.append(0.5 * np.trace(sqrtm((rho - rho_tilde).conj().T @ (rho - rho_tilde))))
+
+# Calcalate the fidelity averaged over all timesteps
+avg_fid = np.mean(fidelities)
+avg_trace_dist = np.mean(trace_dist)
+print("Maximum and average fidelity = ", np.max(fidelities), avg_fid)
+print("Maximum and average trace dist = ", np.max(trace_dist), avg_trace_dist)
+
 # Comparison of trajectories with strong readout
 fig = plt.figure()
 plt.plot(time[:np.shape(Xf)[1]]*1e6, np.mean(Xf, axis=0), color=x_color, lw=2)
@@ -92,9 +113,11 @@ plt.plot(Tm * 1e6, expX, 'o', color=x_color, markersize=4)
 plt.plot(time[:np.shape(Xf)[1]]*1e6, np.mean(Yf, axis=0), color=y_color, lw=2)
 plt.plot(Tm * 1e6, expY, 'o', color=y_color, markersize=4)
 plt.plot(time[:np.shape(Xf)[1]]*1e6, np.mean(Zf, axis=0), color=z_color, lw=2)
-plt.plot(Tm * 1e6, expZ, 'o', color=z_color, markersize=4)
+plt.plot(Tm * 1e6, expZ, 'o', color=z_color, markersize=4,
+         label=f"$F$ = {np.abs(avg_fid):.3f}, $T$ = {np.abs(avg_trace_dist):.2e}")
 plt.title("Comparison average trajectories and strong readout")
 plt.xlabel(f"Time ({greek('mu')}s)")
+plt.legend(loc=0, frameon=False)
 plt.xlim(0, np.max(time[:np.shape(Xf)[1]]*1e6))
 fig.savefig(os.path.join(filepath, "001_traj_strong_ro_comparison.png"), **settings['figure_options'])
 
@@ -242,21 +265,27 @@ if sweep_time:
     z_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
 
     for t_min, t_max in tqdm(zip(t_mins, t_maxs)):
-        yz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="Y",
-                                   vertical_axis="Z", other_coordinate=x_for_yz_fit, t_min=t_min, t_max=t_max,
-                                   derivative_order=derivative_order)
-        y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, eig1, eig2 = yz_output
+        try:
+            yz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="Y",
+                                       vertical_axis="Z", other_coordinate=x_for_yz_fit, t_min=t_min, t_max=t_max,
+                                       derivative_order=derivative_order)
+            y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, eig1, eig2 = yz_output
 
-        fr, ferr = plot_and_fit_hamiltonian(y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, dt,
-                                            theta=ROTATION_ANGLE, savepath=os.path.join(filepath, 'traj_swarm'),
-                                            fit_guess=fit_guess, axis_identifier='yz', plot=True, ax_fig=None, fit=True,
-                                            fix_omega=omega_fixed,
-                                            arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'])
+            fr, ferr = plot_and_fit_hamiltonian(y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, dt,
+                                                theta=ROTATION_ANGLE, savepath=os.path.join(filepath, 'traj_swarm'),
+                                                fit_guess=fit_guess, axis_identifier='yz', plot=True, ax_fig=None,
+                                                fit=True, fix_omega=omega_fixed,
+                                                arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'])
 
-        omegas.append(fr[1] / (2 * np.pi))
-        gammas.append(fr[0] / (2 * np.pi))
-        domegas.append(ferr[1] / (2 * np.pi))
-        dgammas.append(ferr[0] / (2 * np.pi))
+            omegas.append(fr[1] / (2 * np.pi))
+            gammas.append(fr[0] / (2 * np.pi))
+            domegas.append(ferr[1] / (2 * np.pi))
+            dgammas.append(ferr[0] / (2 * np.pi))
+        except:
+            omegas.append(np.inf)
+            gammas.append(np.inf)
+            domegas.append(np.inf)
+            dgammas.append(np.inf)
 
     # fit_results = np.array(fit_results)
     # yerr = fit_results * np.sqrt((ferr[0]/fr[0])**2 + (ferr[1]/fr[1])**2)

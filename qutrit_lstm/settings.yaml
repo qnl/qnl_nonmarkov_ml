@@ -9,13 +9,13 @@ analysis:
     arrow_length_multiplier: 1.25
     fit_guess:
     - 100000.0
-    - 1100000.0
-    omega_fixed: false
-  subdir: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_08/1500kHz/analysis/200911_140049_drive_GE_prep_g
-  sweep_time: false
+    - 0.0
+    omega_fixed: true
+  subdir: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_24/cts_rabi_ge_amp_0.0000/prep_+Y/analysis/200928_094949_GE_no_rabi_prep_+Y_dt_10ns
+  sweep_time: true
   t_max: null
   t_min: null
-  trajectory_dt: 2.0e-08
+  trajectory_dt: 1.0e-08
   x_for_yz_fit: null
   y_for_xz_fit: null
   z_for_xy_fit: null
@@ -29,15 +29,15 @@ prep:
   output_filename: training_validation_split.h5
   training_validation_ratio: 0.9
 training:
-  epochs: 20
-  experiment_id: drive_GE_prep_g
+  epochs: 30
+  experiment_id: GE_no_rabi_prep_+Y_dt_10ns
   lstm_neurons: 32
   mask_value: -1.0
   mini_batch_size: 1024
 voltage_records:
-  data_points_for_prep_state: 2
-  filename: cts_rabi_qutrit_ge_amp_0.0103_ef_amp_0.0000_meas_XYZ.h5
-  filepath: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_08/1500kHz
+  data_points_for_prep_state: 4
+  filename: cts_rabi_ge_amp_0.0000_dt_10ns_meas_XYZ.h5
+  filepath: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_24/cts_rabi_ge_amp_0.0000/prep_+Y
   num_features: 2
-  prep_state: +Z
-  strong_ro_dt: 1.0e-07
+  prep_state: null
+  strong_ro_dt: 2.0e-07

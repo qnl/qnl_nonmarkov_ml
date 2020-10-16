@@ -141,7 +141,7 @@ fig = plot_histogram(time_axis, xyz_pred[last_time_idcs, :, 0],
 if m.savepath is not None:
     fig.savefig(os.path.join(m.savepath, "000_histogram.png"), **settings['figure_options'])
 
-m.save_trajectories(time_axis, xyz_pred, valid_time_series_lengths)
+m.save_trajectories(time_axis, xyz_pred, valid_time_series_lengths, history)
 
 fig = plot_verification(y_pred_probabilities, valid_y)
 if m.savepath is not None:
