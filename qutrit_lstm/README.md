@@ -1,13 +1,13 @@
 # Training trajectories with the qutrit_LSTM model
 ## Model
-The model is defined in the file `qutrit_lstm.py` and consists of a many-to-many LSTM with a time-ordered Dense layer on top. The model takes as input voltage record pairs (I(t), Q(t)) and produces an estimate for the probabilities (P0x, P1x, P0y, P1y, P0z, P1z) at each time t. These probabilities describe the probabilities for measurement of 0 or 1 for along the x, y and z measurement axes and they can be used to reconstruct the quantum state (before any collapse of the wavefunction).
+The model is defined in the file `qutrit_lstm_network.py` and consists of a many-to-many LSTM with a time-ordered Dense layer on top (see figure below). The model takes as input voltage record pairs (I(t), Q(t)) and produces an estimate for the probabilities (P0x, P1x, P0y, P1y, P0z, P1z) at each time t. These probabilities describe the probabilities for measurement of 0 or 1 for along the x, y and z measurement axes and are used to reconstruct the quantum state (before any collapse of the wavefunction).
+
 To train the model we use a categorical cross entropy loss function, which enforces a penalty on a large distance between the strong readout result along measurement axis i and the probability of measuring 1 along that same axis i. Additionally, we enforce physicality of the quantum state by ensuring that the probabilities lie within the Bloch sphere, and we help the training by adding a term in the loss function proportional to the distance between the initial state and the probability estimate at time t = 0.
 
 ![Network structure](network_structure.png)
 
 ## Dataset
-The dataset should be stored in a subfolder called data and have subfolders `meas_X`, `meas_Y` and `meas_Z` denoting the measurement axis of the strong readout at the end of each trajectory.
-In each subfolder, there is a single `.pickle` file, which contains trajectories of variable length. Loading is done with methods from the module `qnl_trajectories`.
+The dataset does not have to be in the same folder as the repository. The data should be contained in a single h5 file with the following keys: `meas_X`, `meas_Y` and `meas_Z`, which denote the measurement axis of the strong readout at the end of each trajectory. Each `meas_i` contains subkeys `t_n` where `n` indicates the length of the voltage records in units of strong readout intervals, and typically ranges from 0 to 40. The voltage records are found in `[meas_i/t_n/I_filtered]` and `[meas_i/t_n/Q_filtered]`. All of the loading is handled with methods from the module `qnl_trajectories`.
 
 ## Setting parameters in `settings.yaml`
 The settings file contains all parameters that are used in `prep.py`, `train.py` and `analyze.py`. 
@@ -55,6 +55,8 @@ The second metric is a visual inspection of a histogram of the trajectories, aga
 ![Verification](histogram_example.png)
 
 The histogram of validation trajectories is overlayed with the averaged strong readout results. Ideally, the averaged strong readout results should follow the mean of the histogram at each timestep.
+
+Finally, we can also quantify the training success with statistical measures of the fidelity and the trace distance. These are automatically printed when you run `analyze.py`. Please note that we use the definition of fidelity with the square (see [Wikipedia](https://en.wikipedia.org/wiki/Fidelity_of_quantum_states)).
 
 ## Further analysis
 
