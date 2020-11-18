@@ -80,7 +80,20 @@ padded_Q = tf.keras.preprocessing.sequence.pad_sequences(raw_Q, padding='post',
 batch_size, sequence_length = np.shape(padded_I)
 
 # Pad the labels such that they can be processed by the NN later
-padded_labels = pad_labels(labels, (int(strong_ro_dt/dt) * np.array(timesteps)).tolist() * 3, reps_per_timestep, mask_value)
+# n = settings['voltage_records']['data_points_for_prep_state']
+# padded_labels = pad_labels(labels, (n + int(strong_ro_dt/dt) * np.array(timesteps)).tolist() * 3,
+#                            reps_per_timestep, mask_value)
+_n = 0  # placeholder value to get code to run; need to figure out source of error and fix
+padded_labels = pad_labels(labels, _n + np.array((int(strong_ro_dt/dt) * np.array(timesteps)).tolist() * 3), reps_per_timestep, mask_value)
+
+# print(np.shape(padded_labels))
+# _sel = 5*np.arange(1, 5) - 1
+# print(_sel)
+# # print([padded_labels[0, _sel, i] for i in range(6)])
+# print(labels[_sel])
+# print(padded_labels[0, _sel, :])
+# sys.exit()
+
 
 # Split validation and data deterministically so we can compare results from run to run
 train_x, train_y, valid_x, valid_y = split_data_same_each_time(padded_I.astype(np.float32), padded_Q.astype(np.float32),

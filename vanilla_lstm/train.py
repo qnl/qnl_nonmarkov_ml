@@ -20,16 +20,16 @@ tf.debugging.set_log_device_placement(False)
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
 filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_7/prep_C+X_T+X"
-prep_state = "+Y" # Prep state, VERY IMPORTANT
+prep_state = "+Y"  # Prep state, VERY IMPORTANT
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
 last_timestep = 24
-mask_value = -1.0 # This is the mask value for the data, not the missing labels
-total_epochs = 5 # Number of epochs for the training
-mini_batch_size = 512 # Batch size
-lstm_neurons = 32 # Depth of the LSTM layer
-strong_ro_dt = 200e-9 # Time interval for strong readout in the dataset in seconds
+mask_value = -1.0  # This is the mask value for the data, not the missing labels
+total_epochs = 200  # Number of epochs for the training
+mini_batch_size = 2048  # Batch size
+lstm_neurons = 32  # Depth of the LSTM layer
+strong_ro_dt = 200e-9  # Time interval for strong readout in the dataset in seconds
 
 rabi_amp = os.path.split(os.path.split(filepath)[0])[1]
 experiment_name = f"{rabi_amp}_prep_{prep_state}"
@@ -54,6 +54,14 @@ with h5py.File(os.path.join(filepath, 'training_validation_split.h5'), "r") as f
     all_time_series_lengths = f.get('all_time_series_lengths')[:]
     valid_time_series_lengths = f.get('valid_time_series_lengths')[:]
     train_time_series_lengths = f.get('train_time_series_lengths')[:]
+
+# print(f'{np.shape(train_y)}')
+# print(f'{np.shape(train_x)}')
+# _sel = 5*np.arange(1, 5) - 1
+# print(_sel)
+# print([train_y[0, _sel, i] for i in range(6)])
+# import sys
+# sys.exit()
 
 # Initialize the model
 console.print("Creating model...", style="bold red")
@@ -124,8 +132,10 @@ bins, histX, histY, histZ = get_histogram(time_axis * 1e6,
                                           xyz_pred[last_time_idcs, :, 1],
                                           xyz_pred[last_time_idcs, :, 2])
 
-fig = plot_histogram(time_axis, xyz_pred[last_time_idcs, :, 0],
-                     xyz_pred[last_time_idcs, :, 1], xyz_pred[last_time_idcs, :, 2],
+fig = plot_histogram(time_axis,
+                     xyz_pred[last_time_idcs, :, 0],
+                     xyz_pred[last_time_idcs, :, 1],
+                     xyz_pred[last_time_idcs, :, 2],
                      Tm, expX, expY, expZ)
 if m.savepath is not None:
     fig.savefig(os.path.join(m.savepath, "000_histogram.png"), dpi=200)

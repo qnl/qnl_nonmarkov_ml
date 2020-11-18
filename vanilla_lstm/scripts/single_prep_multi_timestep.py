@@ -9,7 +9,7 @@ console = Console()
 import matplotlib.pyplot as plt
 
 sys.path.append(r"/home/qnl/Git-repositories")
-from qnl_trajectories import data_analysis
+from qnl_trajectories.analysis import data_analysis
 import machine_learning_test as ml
 from machine_learning_test.utils import *
 from machine_learning_test.all_timesteps import *
