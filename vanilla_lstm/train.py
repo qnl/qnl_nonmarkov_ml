@@ -25,8 +25,8 @@ prep_state = "+Y"  # Prep state, VERY IMPORTANT
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
 last_timestep = 159
-mask_value = -1.0  # This is the mask value for the data, not the missing labels
-total_epochs = 200  # Number of epochs for the training
+mask_value = -1  # This is the mask value for the data, not the missing labels
+total_epochs = 1  # Number of epochs for the training
 mini_batch_size = 2048  # Batch size
 lstm_neurons = 32  # Depth of the LSTM layer
 strong_ro_dt = 50e-9  # Time interval for strong readout in the dataset in seconds
@@ -55,19 +55,12 @@ with h5py.File(os.path.join(filepath, 'training_validation_split.h5'), "r") as f
     valid_time_series_lengths = f.get('valid_time_series_lengths')[:]
     train_time_series_lengths = f.get('train_time_series_lengths')[:]
 
-# print(f'{np.shape(train_y)}')
-# print(f'{np.shape(train_x)}')
-# _sel = 5*np.arange(1, 5) - 1
-# print(_sel)
-# print([train_y[0, _sel, i] for i in range(6)])
-# import sys
-# sys.exit()
-
 # Initialize the model
 console.print("Creating model...", style="bold red")
 m = MultiTimeStep(train_x, train_y, valid_x, valid_y, prep_state,
                   lstm_neurons=lstm_neurons, mini_batch_size=mini_batch_size, expX=expX, expY=expY, expZ=expZ,
                   savepath=model_savepath, experiment_name=experiment_name)
+m.mask_value = mask_value
 
 # Check if the training data is equally distributed: whether it has equal number of sequence lengths and meas. axes
 make_a_pie(all_time_series_lengths, "All data - sequence lengths", savepath=m.savepath)
@@ -109,6 +102,7 @@ m.get_expected_accuracy()
 m.init_learning_rate = 1e-3
 
 plt.close('all')
+
 
 # Start the training
 console.print("Training started...", style="bold red")
