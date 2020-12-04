@@ -1,0 +1,46 @@
+analysis:
+  backaction_map:
+    arrow_length_multiplier: 1.5
+    color_max: 0.06
+    color_min: 0.0
+  bin_size: 0.1
+  derivative_order: 1
+  hamiltonian_map:
+    arrow_length_multiplier: 1.25
+    fit_guess:
+    - 100000.0
+    - 0.0
+    omega_fixed: true
+  subdir: /media/qnl/Extreme SSD/Gate diagnosis/2020_11_23/SQG_RNN_qutrit_1000_ns_err_amp_0.0000_leakage_ratio_0.25/prep_-X/analysis/201203_081302_equally_spaced_dt_5_ns
+  sweep_time: false
+  t_max: null
+  t_min: null
+  trajectory_dt: 5.0e-09
+  x_for_yz_fit: null
+  y_for_xz_fit: null
+  z_for_xy_fit: null
+figure_options:
+  bbox_inches: tight
+  dpi: 200
+  pad_inches: 0.05
+  transparent: true
+prep:
+  iq_scaling: 0.005
+  output_filename: training_validation_split.h5
+  training_validation_ratio: 0.9
+training:
+  epochs: 12
+  experiment_id: equally_spaced_dt_5_ns
+  learning_rate_epoch_constant: 5
+  learning_rate_init: 0.001
+  learning_rate_reduce_after: 1
+  lstm_neurons: 32
+  mask_value: -1.0
+  mini_batch_size: 512
+voltage_records:
+  data_points_for_prep_state: 8
+  filename: SQG_RNN_qutrit_1000_ns_err_amp_0.0000_leakage_ratio_0.25_dt_5ns_meas_Z.h5
+  filepath: /media/qnl/Extreme SSD/Gate diagnosis/2020_11_23/SQG_RNN_qutrit_1000_ns_err_amp_0.0000_leakage_ratio_0.25/prep_-X
+  n_levels: 3
+  num_features: 2
+  prep_state: null
