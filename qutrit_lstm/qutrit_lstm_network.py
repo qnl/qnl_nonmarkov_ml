@@ -168,12 +168,19 @@ class MultiTimeStep():
                                             mask_value=self.mask_value,
                                             savepath=self.savepath,
                                             prep_x=self.prep_x, prep_y=self.prep_y, prep_z=self.prep_z)
+        self.checkpoint_filepath = os.path.join(self.savepath, "checkpoint", "checkpoint")
+        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath=self.checkpoint_filepath,
+                                                                       save_weights_only=True,
+                                                                       monitor='val_masked_accuracy',
+                                                                       mode='max',
+                                                                       save_best_only=True)
 
         history = self.model.fit(self.training_features, self.training_labels, epochs=epochs,
                                  batch_size=self.mini_batch_size,
                                  validation_data=(self.validation_features, self.validation_labels),
                                  verbose=verbose_level, shuffle=True,
                                  callbacks=[tensorboard_callback,
+                                            model_checkpoint_callback,
                                             TrainingPlot(),
                                             LRScheduler,
                                             loss_tracker_callback,

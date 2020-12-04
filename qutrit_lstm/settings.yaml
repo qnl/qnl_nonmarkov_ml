@@ -10,13 +10,13 @@ analysis:
     fit_guess:
     - 100000.0
     - 0.0
-    omega_fixed: true
-  subdir: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_24/cts_rabi_ge_amp_0.0000/prep_+Y/analysis/200928_094949_GE_no_rabi_prep_+Y_dt_10ns
-  sweep_time: true
+    omega_fixed: false
+  subdir: /media/qnl/Extreme SSD/Continuous rabi drive/2020_11_23/paper_backaction_maps_ge_amp_0.0029/prep_-Y/analysis/201203_130756_prep_-Y_dt_40ns
+  sweep_time: false
   t_max: null
   t_min: null
-  trajectory_dt: 1.0e-08
-  x_for_yz_fit: null
+  trajectory_dt: 4.0e-08
+  x_for_yz_fit: 0.0
   y_for_xz_fit: null
   z_for_xy_fit: null
 figure_options:
@@ -30,14 +30,14 @@ prep:
   training_validation_ratio: 0.9
 training:
   epochs: 30
-  experiment_id: GE_no_rabi_prep_+Y_dt_10ns
+  experiment_id: prep_-Y_dt_40ns
   lstm_neurons: 32
   mask_value: -1.0
   mini_batch_size: 1024
 voltage_records:
-  data_points_for_prep_state: 4
-  filename: cts_rabi_ge_amp_0.0000_dt_10ns_meas_XYZ.h5
-  filepath: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_24/cts_rabi_ge_amp_0.0000/prep_+Y
+  data_points_for_prep_state: 1
+  filename: paper_backaction_maps_ge_amp_0.0029_dt_40ns_meas_XYZ.h5
+  filepath: /media/qnl/Extreme SSD/Continuous rabi drive/2020_11_23/paper_backaction_maps_ge_amp_0.0029/prep_-Y
   num_features: 2
   prep_state: null
   strong_ro_dt: 2.0e-07

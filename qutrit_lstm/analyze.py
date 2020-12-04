@@ -37,7 +37,7 @@ t_max = settings['analysis']['t_max']
 
 sweep_time = settings['analysis']['sweep_time'] # Bin the trajectories in time to fit parameters as function of time.
 time_window = 0.2e-6 # Use this time window when sweep_time = True
-t_mins = np.linspace(0.4e-6, 5.8e-6, 1 + np.int(np.round((5.8e-6 - 0.4e-6) / time_window))) # Left side of the time window
+t_mins = np.linspace(0.4e-6, 8.0e-6, 1 + np.int(np.round((8.0e-6 - 0.4e-6) / time_window))) # Left side of the time window
 t_maxs = t_mins + time_window # Right side of the time window
 
 x_for_yz_fit = settings['analysis']['x_for_yz_fit'] # Keep None if you don't want to select on the x coordinate

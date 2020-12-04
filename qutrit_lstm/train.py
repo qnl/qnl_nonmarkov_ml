@@ -114,16 +114,18 @@ plt.close('all')
 # Start the training
 console.print("Training started...", style="bold red")
 history = m.fit_model(total_epochs)
+console.print("Training finished, loading optimal weights into network...", style="bold red")
+m.model.load_weights(m.checkpoint_filepath)
 
 m.plot_history(history)
-m.model.save_weights(os.path.join(m.savepath, "weights.h5"))
+# m.model.save_weights(os.path.join(m.savepath, "weights.h5"))
 
 console.print("Feeding vaildation data back into network...", style="bold red")
 
 # Pass the validation data through the network once more to produce some plots
 y_pred = m.model.predict(valid_x)
 y_pred_probabilities = pairwise_softmax(y_pred)
-xyz_pred = get_xyz(pairwise_softmax(y_pred))
+xyz_pred = get_xyz(y_pred_probabilities)
 last_time_idcs = np.where(valid_time_series_lengths == valid_time_series_lengths[-1])[0]
 time_axis = np.arange(dt - settings['voltage_records']['data_points_for_prep_state']*dt,
                       tfinal + dt, dt)#[:np.shape(xyz_pred)[1]]
