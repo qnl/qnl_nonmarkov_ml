@@ -1,5 +1,5 @@
 import tensorflow as tf
-import visdom, os, h5py
+import visdom, os, h5py, gc
 import numpy as np
 from matplotlib import pyplot as plt
 from tensorflow.keras import layers, backend as K
@@ -69,6 +69,8 @@ class TrainingPlot(tf.keras.callbacks.Callback):
                                  opts=dict(title="Accuracy", xlabel='Epoch', ylabel='Accuracy'),
                                  name='Validation_Accuracy',
                                  **kwargs)
+
+        gc.collect()
 
 
 class DropOutScheduler(tf.keras.callbacks.Callback):
