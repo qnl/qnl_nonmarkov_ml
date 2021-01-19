@@ -30,6 +30,23 @@ prep_states = settings['voltage_records']['prep_states']
 num_prep_states = len(prep_states)
 data_points_for_prep_state = settings['voltage_records']['data_points_for_prep_state']
 
+# arrow_length_multiplier = 1.25 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
+ROTATION_ANGLE = 0 # Rotation angle of the data
+fit_guess = settings['analysis']['hamiltonian_map']['fit_guess'] # Fit guess for Hamiltonian map fit, gamma, omega
+derivative_order = settings['analysis']['derivative_order']
+omega_fixed = settings['analysis']['hamiltonian_map']['omega_fixed']
+t_min = settings['analysis']['t_min']
+t_max = settings['analysis']['t_max']
+
+sweep_time = settings['analysis']['sweep_time'] # Bin the trajectories in time to fit parameters as function of time.
+time_window = 0.2e-6 # Use this time window when sweep_time = True
+t_mins = np.linspace(0.4e-6, 6.8e-6, 1 + np.int(np.round((6.8e-6 - 0.4e-6) / time_window))) # Left side of the time window
+t_maxs = t_mins + time_window # Right side of the time window
+
+x_for_yz_fit = settings['analysis']['x_for_yz_fit'] # Keep None if you don't want to select on the x coordinate
+y_for_xz_fit = settings['analysis']['y_for_xz_fit']
+z_for_xy_fit = settings['analysis']['z_for_xy_fit']
+
 for k, p in enumerate(prep_states):
     console.print(f"Loading data...", style="bold green")
 
@@ -175,63 +192,66 @@ for k, p in enumerate(prep_states):
 
     plt.close('all')
 
-# Grid spacing
-# d_bin = settings['analysis']['bin_size']
-# x_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
-# y_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
-# z_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
-#
-# console.print(f"Making yz quiver plots", style="bold green")
-#
-# # Bin trajectories in the YZ plane, now taking into account trained trajectories of all lengths
-# yz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="Y",
-#                            vertical_axis="Z", other_coordinate=x_for_yz_fit, t_min=t_min, t_max=t_max,
-#                            derivative_order=derivative_order)
-# y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, eig1, eig2 = yz_output
-#
-# # From the average values we can fit the Hamiltonian parameters in the YZ plane
-# fr_all_times, ferr_all_times = plot_and_fit_hamiltonian(y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, dt,
-#                                                         theta=ROTATION_ANGLE, savepath=filepath, axis_identifier='yz',
-#                                                         arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'],
-#                                                         fix_omega=omega_fixed, fit_guess=fit_guess)
-#
-# # From the eigenvectors eig1 and eig2 we can find the measurement back-action in the YZ plane
-# plot_stochastic(y_bin_centers, z_bin_centers, eig1, eig2, filepath, theta=ROTATION_ANGLE, axis_identifier='yz',
-#                 arrow_length_multiplier=settings['analysis']['backaction_map']['arrow_length_multiplier'],
-#                 color_min=settings['analysis']['backaction_map']['color_min'],
-#                 color_max=settings['analysis']['backaction_map']['color_max'])
-#
-# # Repeat the same procedure for the XY plane
-# console.print(f"Making xy quiver plots", style="bold green")
-# xy_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="X",
-#                            vertical_axis="Y", other_coordinate=z_for_xy_fit, t_min=t_min, t_max=t_max,
-#                            derivative_order=derivative_order)
-# x_bin_centers, y_bin_centers, mean_binned_dX, mean_binned_dY, eig1, eig2 = xy_output
-#
-# plot_and_fit_hamiltonian(x_bin_centers, y_bin_centers, mean_binned_dX, mean_binned_dY, dt, savepath=filepath,
-#                          axis_identifier='xy', fit=False,
-#                          arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'])
-# plot_stochastic(x_bin_centers, y_bin_centers, eig1, eig2, filepath, axis_identifier='xy',
-#                 arrow_length_multiplier=settings['analysis']['backaction_map']['arrow_length_multiplier'],
-#                 color_min=settings['analysis']['backaction_map']['color_min'],
-#                 color_max=settings['analysis']['backaction_map']['color_max'])
-#
-# # Repeat the same procedure for the xz plane
-# console.print(f"Making xz quiver plots", style="bold green")
-# xz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="X",
-#                            vertical_axis="Z", other_coordinate=y_for_xz_fit, t_min=t_min, t_max=t_max,
-#                            derivative_order=derivative_order)
-# x_bin_centers, z_bin_centers, mean_binned_dX, mean_binned_dZ, eig1, eig2 = xz_output
-#
-# plot_and_fit_hamiltonian(x_bin_centers, z_bin_centers, mean_binned_dX, mean_binned_dZ, dt, savepath=filepath,
-#                          axis_identifier='xz', fit=False,
-#                          arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'])
-# plot_stochastic(x_bin_centers, z_bin_centers, eig1, eig2, filepath, axis_identifier='xz',
-#                 arrow_length_multiplier=settings['analysis']['backaction_map']['arrow_length_multiplier'],
-#                 color_min=settings['analysis']['backaction_map']['color_min'],
-#                 color_max=settings['analysis']['backaction_map']['color_max'])
-#
-# plt.close('all')
+    # Grid spacing
+    d_bin = settings['analysis']['bin_size']
+    x_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
+    y_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
+    z_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
+
+    console.print(f"Making yz quiver plots", style="bold green")
+
+    # Bin trajectories in the YZ plane, now taking into account trained trajectories of all lengths
+    yz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="Y",
+                               prefix=f"prep_{p}/predictions",
+                               vertical_axis="Z", other_coordinate=x_for_yz_fit, t_min=t_min, t_max=t_max,
+                               derivative_order=derivative_order)
+    y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, eig1, eig2 = yz_output
+
+    # From the average values we can fit the Hamiltonian parameters in the YZ plane
+    fr_all_times, ferr_all_times = plot_and_fit_hamiltonian(y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, dt,
+                                                            theta=ROTATION_ANGLE, savepath=filepath, axis_identifier='yz',
+                                                            arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'],
+                                                            fix_omega=omega_fixed, fit_guess=fit_guess)
+
+    # From the eigenvectors eig1 and eig2 we can find the measurement back-action in the YZ plane
+    plot_stochastic(y_bin_centers, z_bin_centers, eig1, eig2, filepath, theta=ROTATION_ANGLE, axis_identifier='yz',
+                    arrow_length_multiplier=settings['analysis']['backaction_map']['arrow_length_multiplier'],
+                    color_min=settings['analysis']['backaction_map']['color_min'],
+                    color_max=settings['analysis']['backaction_map']['color_max'])
+
+    # Repeat the same procedure for the XY plane
+    console.print(f"Making xy quiver plots", style="bold green")
+    xy_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="X",
+                               prefix=f"prep_{p}/predictions",
+                               vertical_axis="Y", other_coordinate=z_for_xy_fit, t_min=t_min, t_max=t_max,
+                               derivative_order=derivative_order)
+    x_bin_centers, y_bin_centers, mean_binned_dX, mean_binned_dY, eig1, eig2 = xy_output
+
+    plot_and_fit_hamiltonian(x_bin_centers, y_bin_centers, mean_binned_dX, mean_binned_dY, dt, savepath=filepath,
+                             axis_identifier='xy', fit=False,
+                             arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'])
+    plot_stochastic(x_bin_centers, y_bin_centers, eig1, eig2, filepath, axis_identifier='xy',
+                    arrow_length_multiplier=settings['analysis']['backaction_map']['arrow_length_multiplier'],
+                    color_min=settings['analysis']['backaction_map']['color_min'],
+                    color_max=settings['analysis']['backaction_map']['color_max'])
+
+    # Repeat the same procedure for the xz plane
+    console.print(f"Making xz quiver plots", style="bold green")
+    xz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="X",
+                               prefix=f"prep_{p}/predictions",
+                               vertical_axis="Z", other_coordinate=y_for_xz_fit, t_min=t_min, t_max=t_max,
+                               derivative_order=derivative_order)
+    x_bin_centers, z_bin_centers, mean_binned_dX, mean_binned_dZ, eig1, eig2 = xz_output
+
+    plot_and_fit_hamiltonian(x_bin_centers, z_bin_centers, mean_binned_dX, mean_binned_dZ, dt, savepath=filepath,
+                             axis_identifier='xz', fit=False,
+                             arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'])
+    plot_stochastic(x_bin_centers, z_bin_centers, eig1, eig2, filepath, axis_identifier='xz',
+                    arrow_length_multiplier=settings['analysis']['backaction_map']['arrow_length_multiplier'],
+                    color_min=settings['analysis']['backaction_map']['color_min'],
+                    color_max=settings['analysis']['backaction_map']['color_max'])
+
+    plt.close('all')
 #
 # omegas = []
 # gammas = []

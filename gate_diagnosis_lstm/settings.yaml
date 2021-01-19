@@ -11,11 +11,11 @@ analysis:
     - 100000.0
     - 0.0
     omega_fixed: true
-  subdir: /media/qnl/Extreme SSD/Gate diagnosis/2020_11_23/SQG_RNN_1000_ns_err_amp_0.0000_leakage_ratio_0.00_denser_sampling/analysis/201217_102804_all_prep_states_densely_sampled_dt_5_ns
+  subdir: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_08/cts_rabi_qutrit_ge_amp_0.0014_ef_amp_0.0000/analysis/210119_100205_single_prep_state_dt_40ns
   sweep_time: false
   t_max: null
   t_min: null
-  trajectory_dt: 5.0e-09
+  trajectory_dt: 4.0e-08
   x_for_yz_fit: null
   y_for_xz_fit: null
   z_for_xy_fit: null
@@ -30,25 +30,22 @@ prep:
   output_filename: training_validation_split.h5
   training_validation_ratio: 0.9
 training:
-  annealing_steps: 3
-  epochs_per_anneal: 10
-  experiment_id: all_prep_states_densely_sampled_dt_5_ns
-  learning_rate_epoch_constant: 5
+  annealing_steps: 4
+  epochs_per_anneal: 15
+  experiment_id: single_prep_state_dt_40ns
+  learning_rate_epoch_constant: 7
   learning_rate_init: 0.001
-  learning_rate_reduce_after: 1
+  learning_rate_reduce_after: 0
   lstm_neurons: 32
   mask_value: -1.0
   mini_batch_size: 512
   prep_state_from_ro: true
 voltage_records:
-  data_points_for_prep_state: 8
-  filename: all_prep_states_dt_5ns_meas_XYZ.h5
-  filepath: /media/qnl/Extreme SSD/Gate diagnosis/2020_11_23/SQG_RNN_1000_ns_err_amp_0.0000_leakage_ratio_0.00_denser_sampling
+  data_points_for_prep_state: 1
+  filename: single_prep_state_dt_40ns_meas_XYZ.h5
+  filepath: /media/qnl/Extreme SSD/Continuous rabi drive/2020_09_08/cts_rabi_qutrit_ge_amp_0.0014_ef_amp_0.0000
   multiple_prep_states: true
   n_levels: 2
   num_features: 2
   prep_states:
   - g
-  - e
-  - +Y
-  - -Y

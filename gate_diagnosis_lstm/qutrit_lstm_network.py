@@ -47,12 +47,10 @@ def get_trajectories_within_window(predictions, target_value, RO_results, n_leve
 
     return passed_idcs, avg_verification_value, passed_RO_results
 
-
 def get_error(strong_ro_results, readout_value=1):
     N = len(strong_ro_results)
     p = np.sum(strong_ro_results == readout_value) / N
     return np.sqrt(p * (1-p) / N)
-
 
 def pairwise_softmax(y_pred, n_levels):
     # In the case of qubits, we should do a pairwise softmax.
@@ -126,6 +124,7 @@ class MultiTimeStep():
             self.num_prep_states = np.shape(self.expX)[0]
 
             # For calculation of the cost function. init_x, init_y and init_z are arrays of shape (num_prep_states, 2)
+            # Note: init_x, init_y and init_z are the probabilities, not the qubit coordinates x0, y0 and z0
             if prep_state_from_ro:
                 self.init_x = np.array([[0.5 * (1 + self.expX[p, 0]),
                                          0.5 * (1 - self.expX[p, 0])] for p in range(self.num_prep_states)])
@@ -135,7 +134,7 @@ class MultiTimeStep():
                                          0.5 * (1 - self.expZ[p, 0])] for p in range(self.num_prep_states)])
                 print("Prep states inferred from strong readout results:")
                 for p, ps in enumerate(prep_states):
-                    print(f"Prep state {ps} - (Px, Py, Pz) = ({self.init_x[p, 1]:.3f}, {self.init_x[p, 1]:.3f}, {self.init_x[p, 1]:.3f})")
+                    print(f"Prep state {ps} - (Px, Py, Pz) = ({self.init_x[p, 1]:.3f}, {self.init_y[p, 1]:.3f}, {self.init_z[p, 1]:.3f})")
             else:
                 self.init_x = np.array([qubit_prep_dict[key]['prep_x'] for key in prep_states])
                 self.init_y = np.array([qubit_prep_dict[key]['prep_y'] for key in prep_states])
@@ -151,7 +150,8 @@ class MultiTimeStep():
             self.num_prep_states = np.shape(self.Pg)[0]
 
         self.mask_value = -1.0
-        # self.prep_state_encoding(n_levels=n_levels, prep_state=prep_state)
+        # if self.num_prep_states == 1:
+        #     self.prep_state_encoding(n_levels=n_levels, prep_state=self.prep_states[0])
 
         if savepath is not None:
             subfolder = time.strftime(f'%y%m%d_%H%M%S_{experiment_name}')
@@ -224,7 +224,11 @@ class MultiTimeStep():
         # self.model.add(layers.TimeDistributed(layers.Dropout(self.init_dropout)))
 
         # Cast to the output
-        self.model.add(layers.TimeDistributed(layers.Dense(self.num_prep_states + self.n_levels * self.num_measurement_axes)))
+        if self.num_prep_states > 1:
+            self.model.add(layers.TimeDistributed(layers.Dense(self.num_prep_states + self.n_levels * self.num_measurement_axes)))
+        else:
+            # If there's just a single prep state, we don't need to use the prep state encoding.
+            self.model.add(layers.TimeDistributed(layers.Dense(self.n_levels * self.num_measurement_axes)))
 
         self.model.summary()
 
@@ -239,50 +243,54 @@ class MultiTimeStep():
             self.model.compile(loss=self.qutrit_loss_function, optimizer=optimizer, metrics=[self.masked_accuracy])
 
     def fit_model(self, training_features, training_labels, verbose_level=1):
+
         LRScheduler = tf.keras.callbacks.LearningRateScheduler(self.learning_rate_schedule)
         # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=self.savepath, histogram_freq=1)
-        # loss_tracker_callback = LossTracker(self.validation_features,
-        #                                     self.validation_labels,
-        #                                     self.n_levels,
-        #                                     mask_value=self.mask_value,
-        #                                     savepath=self.savepath,
-        #                                     prep_x=self.prep_x, prep_y=self.prep_y, prep_z=self.prep_z)
+
+        loss_tracker_callback = LossTracker(self.validation_features,
+                                            self.validation_labels,
+                                            self.n_levels,
+                                            num_prep_states=self.num_prep_states,
+                                            mask_value=self.mask_value,
+                                            savepath=self.savepath,
+                                            init_x=self.init_x, init_y=self.init_y, init_z=self.init_z)
+
         history = self.model.fit(training_features, training_labels, epochs=self.total_epochs,
                                  batch_size=self.mini_batch_size,
                                  validation_data=(self.validation_features, self.validation_labels),
                                  verbose=verbose_level, shuffle=True,
                                  callbacks=[TrainingPlot(),
-                                            LRScheduler])
-                                            # loss_tracker_callback,
+                                            LRScheduler,
+                                            loss_tracker_callback])
                                             # ValidationPlot(self.validation_features,
                                             #                self.validation_labels, self.n_levels, self.mini_batch_size,
                                             #                self.savepath, **self.avgd_strong_ro_results),
                                             # DropOutScheduler(self.dropout_schedule)])
         return history
 
-    def fit_model_with_generator(self, dataset, epochs, verbose_level=1):
-        LRScheduler = tf.keras.callbacks.LearningRateScheduler(self.learning_rate_schedule)
-        # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=self.savepath, histogram_freq=1)
-        # loss_tracker_callback = LossTracker(self.validation_features,
-        #                                     self.validation_labels,
-        #                                     self.n_levels,
-        #                                     mask_value=self.mask_value,
-        #                                     savepath=self.savepath,
-        #                                     prep_x=self.prep_x, prep_y=self.prep_y, prep_z=self.prep_z)
-
-        history = self.model.fit(x=dataset, epochs=epochs,
-                                 steps_per_epoch=np.int(self.validation_features.shape[0] / self.mini_batch_size),
-                                 batch_size=self.mini_batch_size,
-                                 validation_data=(self.validation_features, self.validation_labels),
-                                 verbose=verbose_level, shuffle=True,
-                                 callbacks=[TrainingPlot(),
-                                            LRScheduler])
-                                            # loss_tracker_callback,
-                                            # ValidationPlot(self.validation_features,
-                                            #                self.validation_labels, self.n_levels, self.mini_batch_size,
-                                            #                self.savepath, **self.avgd_strong_ro_results),
-                                            # DropOutScheduler(self.dropout_schedule)])
-        return history
+    # def fit_model_with_generator(self, dataset, epochs, verbose_level=1):
+    #     LRScheduler = tf.keras.callbacks.LearningRateScheduler(self.learning_rate_schedule)
+    #     # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=self.savepath, histogram_freq=1)
+    #     # loss_tracker_callback = LossTracker(self.validation_features,
+    #     #                                     self.validation_labels,
+    #     #                                     self.n_levels,
+    #     #                                     mask_value=self.mask_value,
+    #     #                                     savepath=self.savepath,
+    #     #                                     prep_x=self.prep_x, prep_y=self.prep_y, prep_z=self.prep_z)
+    #
+    #     history = self.model.fit(x=dataset, epochs=epochs,
+    #                              steps_per_epoch=np.int(self.validation_features.shape[0] / self.mini_batch_size),
+    #                              batch_size=self.mini_batch_size,
+    #                              validation_data=(self.validation_features, self.validation_labels),
+    #                              verbose=verbose_level, shuffle=True,
+    #                              callbacks=[TrainingPlot(),
+    #                                         LRScheduler])
+    #                                         # loss_tracker_callback,
+    #                                         # ValidationPlot(self.validation_features,
+    #                                         #                self.validation_labels, self.n_levels, self.mini_batch_size,
+    #                                         #                self.savepath, **self.avgd_strong_ro_results),
+    #                                         # DropOutScheduler(self.dropout_schedule)])
+    #     return history
 
     def learning_rate_schedule(self, epoch):
         epoch = tf.math.floormod(epoch, self.epochs_per_annealing)
@@ -339,10 +347,12 @@ class MultiTimeStep():
         init_y = tf.linalg.matmul(true_encoding, tf.constant(self.init_y, dtype=K.floatx()))
         init_z = tf.linalg.matmul(true_encoding, tf.constant(self.init_z, dtype=K.floatx()))
 
+        # I think this is useless, because this is enforced in the loss function above
         # init_x_pred = K.softmax(y_pred_ro_results[:, self.data_points_for_prep_state, :2])
         # init_y_pred = K.softmax(y_pred_ro_results[:, self.data_points_for_prep_state, 2:4])
         # init_z_pred = K.softmax(y_pred_ro_results[:, self.data_points_for_prep_state, 4:])
 
+        # This will enforce the x, y and z values of the prep state on the first sample.
         init_x_pred = K.softmax(y_pred_ro_results[:, 0, :2])
         init_y_pred = K.softmax(y_pred_ro_results[:, 0, 2:4])
         init_z_pred = K.softmax(y_pred_ro_results[:, 0, 4:])
@@ -394,14 +404,17 @@ class MultiTimeStep():
 
         # Penalize deviation from the known initial state at the first time step
         # Do a softmax to get the predicted probabilities
-        init_x = tf.repeat(tf.constant([self.prep_x], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
+        init_x = tf.repeat(tf.constant(self.init_x, dtype=K.floatx()),
+                           repeats=K.cast(batch_size, "int32"), axis=0)
         init_x_pred = K.softmax(y_pred[:, 0, 0:2])
         # todo: pull the 0 from the number of samples for the first timestep
 
-        init_y = tf.repeat(tf.constant([self.prep_y], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
+        init_y = tf.repeat(tf.constant(self.init_y, dtype=K.floatx()),
+                           repeats=K.cast(batch_size, "int32"), axis=0)
         init_y_pred = K.softmax(y_pred[:, 0, 2:4])
 
-        init_z = tf.repeat(tf.constant([self.prep_z], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
+        init_z = tf.repeat(tf.constant(self.init_z, dtype=K.floatx()),
+                           repeats=K.cast(batch_size, "int32"), axis=0)
         init_z_pred = K.softmax(y_pred[:, 0, 4:6])
 
         L_init_state = K.sqrt(K.square(init_x - init_x_pred)[0] + \
@@ -416,8 +429,8 @@ class MultiTimeStep():
 
         # Force the state of average readout results to be equal to the strong readout results.
         lagrange_1 = tf.constant(1.0, dtype=K.floatx())
-        lagrange_2 = tf.constant(0.5, dtype=K.floatx())
-        lagrange_3 = tf.constant(0.1, dtype=K.floatx())
+        lagrange_2 = tf.constant(1.0, dtype=K.floatx())
+        lagrange_3 = tf.constant(1.0, dtype=K.floatx())
 
         return lagrange_1 * L_readout + lagrange_2 * L_init_state[0] + lagrange_3 * K.mean(L_outside_sphere)
 
@@ -524,7 +537,9 @@ class MultiTimeStep():
 
         with h5py.File(os.path.join(self.savepath, "trajectories.h5"), 'a') as f:
             # Compatible with multiple prep states
-            if not file_exists:
+            if "t" not in list(f.keys()):
+                print(f.keys())
+            # if not file_exists:
                 f.create_dataset("t", data=time)
 
                 epochs = np.arange(1, 1 + len(history.history['loss']))
@@ -537,7 +552,7 @@ class MultiTimeStep():
                 for key in history_keys:
                     f.create_dataset(f"training/{key}", data=history.history[key])
 
-                learning_rate = np.array([self.learning_rate_schedule(e) for e in epochs])
+                learning_rate = np.array([self.learning_rate_schedule(e-1) for e in epochs])
                 f.create_dataset(f"training/learning_rate", data=learning_rate)
 
             unique_indices = np.unique(indices)
@@ -826,13 +841,16 @@ def _simple_line(x, *p):
     slope, offset = p
     return slope * x + offset
 
-def weighted_line_fit(xdata, ydata, yerr, guess_slope, guess_offset):
-    try:
-        popt, pcov = curve_fit(_simple_line, xdata, ydata, p0=[guess_slope, guess_offset],
-                               sigma=yerr, absolute_sigma=True, check_finite=True,
-                               bounds=(-np.inf, np.inf), method=None, jac=None)
-    except RuntimeError:
+def weighted_line_fit(xdata, ydata, yerr, guess_slope, guess_offset, no_weights=False):
+    if no_weights:
         popt, pcov = curve_fit(_simple_line, xdata, ydata, p0=[guess_slope, guess_offset])
+    else:
+        try:
+            popt, pcov = curve_fit(_simple_line, xdata, ydata, p0=[guess_slope, guess_offset],
+                                   sigma=yerr, absolute_sigma=True, check_finite=True,
+                                   bounds=(-np.inf, np.inf), method=None, jac=None)
+        except RuntimeError:
+            popt, pcov = curve_fit(_simple_line, xdata, ydata, p0=[guess_slope, guess_offset])
 
     perr = np.sqrt(np.diag(pcov))
 

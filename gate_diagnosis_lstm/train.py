@@ -81,6 +81,14 @@ with h5py.File(os.path.join(filepath, settings['prep']['output_filename']), "r")
     valid_time_series_lengths = f.get('valid_time_series_lengths')[:]
     train_time_series_lengths = f.get('train_time_series_lengths')[:]
 
+if len(prep_states) == 1:
+    # Don't give the NN the prep state encoding, since it's not used in the cost function.
+    train_x = train_x[..., :-1] # Order in the last index is [I, Q, prep state encoding]
+    train_y = train_y[..., 1:] # Order in the last index is [prep state encoding, P0x, P1x, etc.]
+
+    valid_x = valid_x[..., :-1]
+    valid_y = valid_y[..., 1:]
+
 # Construct Tensorflow dataset
 # class generator:
 #     def __init__(self):
@@ -260,7 +268,7 @@ if num_prep_states > 1:
 else:
     # In the case of just a single prep state (backwards compatible). Make a histogram of the validation trajectories
     if n_levels == 2:
-        xyz_pred = get_xyz(pairwise_softmax(y_pred_probabilities, n_levels))
+        xyz_pred = get_xyz(y_pred_probabilities)
         bins, histX, histY, histZ = get_histogram(time_axis * 1e6,
                                                   xyz_pred[last_time_idcs, :, 0],
                                                   xyz_pred[last_time_idcs, :, 1],
@@ -269,7 +277,7 @@ else:
 
         fig = plot_qubit_histogram(time_axis, xyz_pred[last_time_idcs, :, 0],
                                    xyz_pred[last_time_idcs, :, 1], xyz_pred[last_time_idcs, :, 2],
-                                   Tm, expX, expY, expZ)
+                                   Tm, expX[0, :], expY[0, :], expZ[0, :])
     elif n_levels == 3:
         xyz_pred = y_pred_probabilities
         print(xyz_pred.shape)
@@ -294,7 +302,7 @@ else:
     if m.savepath is not None:
         fig.savefig(os.path.join(m.savepath, "000_verification_on_validation_data.png"), **settings['figure_options'])
 
-    m.save_trajectories(time_axis, xyz_pred, valid_time_series_lengths, history)
+    m.save_trajectories(time_axis, xyz_pred, valid_time_series_lengths, history, prep_label=prep_states[0])
 
 # Plot the qubit verification averaged over all prep states.
 if n_levels == 2:
