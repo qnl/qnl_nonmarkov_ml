@@ -19,26 +19,26 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-last_timestep = 39
+last_timestep = 199
 
-datapath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_0/prep_C+X_T+X" # Path of the data
-filepath = r"analysis/rabi_amp_sweep/200707_161016_phase_0_prep_+Y" # Path of the trained trajectories
+datapath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_11_04/tls_driven_7/prep_Y" # Path of the data
+filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/code/qnl_nonmarkov_ml/vanilla_lstm/analysis/tls/201119_083903_tls_driven_7_prep_+Y" # Path of the trained trajectories
 
-arrow_length_multiplier = 1.25 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
+arrow_length_multiplier = 0.5 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
 ROTATION_ANGLE = 0 # Rotation angle of the data
 # seq_lengths = np.arange(100, 780, 20)
-seq_lengths = np.arange(25, 200, 5) # Sequence lengths to process for the quiver maps, in units of weak measurement dt
+seq_lengths = np.arange(3, 597, 3) # Sequence lengths to process for the quiver maps, in units of weak measurement dt
 
 sweep_time = True # Bin the trajectories in time to fit parameters as function of time.
-time_window = 0.2e-6 # Use this time window when sweep_time = True
-t_mins = np.arange(0.6e-6, 7.4e-6, time_window) # Left side of the time window
-t_maxs = np.arange(0.6e-6 + time_window, 7.4e-6 + time_window, time_window) # Right side of the time window
+time_window = 0.1e-6 # Use this time window when sweep_time = True
+t_mins = np.arange(0.0e-6, 5.97e-6, time_window) # Left side of the time window
+t_maxs = np.arange(0.0e-6 + time_window, 5.97e-6 + time_window, time_window) # Right side of the time window
 
 console.print(f"Loading data...", style="bold green")
 
-dX = data_analysis.load_data(os.path.join(datapath, 'meas_X'), last_timestep=last_timestep, qubit='Q6')
-dY = data_analysis.load_data(os.path.join(datapath, 'meas_Y'), last_timestep=last_timestep, qubit='Q6')
-dZ = data_analysis.load_data(os.path.join(datapath, 'meas_Z'), last_timestep=last_timestep, qubit='Q6')
+dX = data_analysis.load_data(os.path.join(datapath, 'meas_X'), method='final', qubit='Q7')
+dY = data_analysis.load_data(os.path.join(datapath, 'meas_Y'), method='final', qubit='Q7')
+dZ = data_analysis.load_data(os.path.join(datapath, 'meas_Z'), method='final', qubit='Q7')
 
 Tm, expX, expY, expZ = data_analysis.plot_average_trajectories(dX, dY, dZ,
                                                                timesteps=np.arange(0, last_timestep+1),
