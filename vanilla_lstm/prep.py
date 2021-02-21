@@ -16,24 +16,24 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_11_02/tls_undriven_1/prep_Y"
-meas_X = r"meas_X"
-meas_Y = r"meas_Y"
-meas_Z = r"meas_Z"
+filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_07_31/cr_trajectories_test_024/prep_C+X_T+Y"
+meas_X = r"meas_C+Z_T+X"
+meas_Y = r"meas_C+Z_T+Y"
+meas_Z = r"meas_C+Z_T+Z"
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-last_timestep = 159
+last_timestep = 249
 mask_value = -1.0  # This is the mask value for the data, not the missing labels
 num_features = 2  # I and Q
-strong_ro_dt = 50e-9  # Time interval for strong readout in the dataset in seconds
+strong_ro_dt = 20e-9  # Time interval for strong readout in the dataset in seconds
 
 console.print("Loading data...", style="bold red")
 
 # Load the data from the pickle files.
-dX = data_analysis.load_data(os.path.join(filepath, meas_X), qubit='Q7', method='final')
-dY = data_analysis.load_data(os.path.join(filepath, meas_Y), qubit='Q7', method='final')
-dZ = data_analysis.load_data(os.path.join(filepath, meas_Z), qubit='Q7', method='final')
+dX = data_analysis.load_data(os.path.join(filepath, meas_X), qubit='Q6', method='final')
+dY = data_analysis.load_data(os.path.join(filepath, meas_Y), qubit='Q6', method='final')
+dZ = data_analysis.load_data(os.path.join(filepath, meas_Z), qubit='Q6', method='final')
 
 dX = df.correct_timestep(dX)
 dY = df.correct_timestep(dY)
@@ -85,14 +85,6 @@ batch_size, sequence_length = np.shape(padded_I)
 #                            reps_per_timestep, mask_value)
 _n = -1  # placeholder value to get code to run; need to figure out source of error and fix
 padded_labels = pad_labels(labels, _n + np.array((int(strong_ro_dt/dt) * np.array(timesteps)).tolist() * 3), reps_per_timestep, mask_value)
-
-print(np.shape(padded_labels))
-# _sel = 5*np.arange(1, 5) - 1
-# print(_sel)
-# # print([padded_labels[0, _sel, i] for i in range(6)])
-# print(labels[_sel])
-# print(padded_labels[0, _sel, :])
-sys.exit()
 
 
 # Split validation and data deterministically so we can compare results from run to run
