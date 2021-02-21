@@ -79,7 +79,7 @@ class MultiTimeStep():
         self.expX = expX
         self.expY = expY
         self.expZ = expZ
-        self.mask_value = -1.0
+        self.mask_value = -1
         if prep_state == "+Y":
             self.prep_x = [0.5, 0.5]
             self.prep_y = [1.0, 0.0]
@@ -156,7 +156,8 @@ class MultiTimeStep():
                                             ValidationPlot(self.validation_features,
                                                            self.validation_labels, self.mini_batch_size,
                                                            self.expX, self.expY, self.expZ, self.savepath),
-                                            DropOutScheduler(self.dropout_schedule)])
+                                            DropOutScheduler(self.dropout_schedule)],
+                                 )
         return history
 
     def learning_rate_schedule(self, epoch):
