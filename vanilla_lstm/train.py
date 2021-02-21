@@ -19,22 +19,22 @@ tf.debugging.set_log_device_placement(False)
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_11_02/tls_undriven_1/prep_Y"
+filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_07_31/cr_trajectories_test_024/prep_C+X_T+Y"
 prep_state = "+Y"  # Prep state, VERY IMPORTANT
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-last_timestep = 159
+last_timestep = 249
 mask_value = -1  # This is the mask value for the data, not the missing labels
-total_epochs = 1  # Number of epochs for the training
-mini_batch_size = 2048  # Batch size
+total_epochs = 50  # Number of epochs for the training
+mini_batch_size = 1024  # Batch size
 lstm_neurons = 32  # Depth of the LSTM layer
-strong_ro_dt = 50e-9  # Time interval for strong readout in the dataset in seconds
+strong_ro_dt = 20e-9  # Time interval for strong readout in the dataset in seconds
 
 rabi_amp = os.path.split(os.path.split(filepath)[0])[1]
 experiment_name = f"{rabi_amp}_prep_{prep_state}"
 # This is where the trained trajectories will be saved to
-model_savepath = r"analysis/tls"
+model_savepath = r"analysis/cr"
 
 # Load the data prepaired in prep.py
 with h5py.File(os.path.join(filepath, 'training_validation_split.h5'), "r") as f:
