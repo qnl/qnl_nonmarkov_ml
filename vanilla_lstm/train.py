@@ -19,22 +19,21 @@ tf.debugging.set_log_device_placement(False)
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_7/prep_C+X_T+X"
-prep_state = "+Y"  # Prep state, VERY IMPORTANT
+filepath = r'/run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_02_17/cr_trajectories_test_028/data_transfer/2021_02_17/cr_trajectories_test_028'
+prep_state = "+X"  # Prep state, VERY IMPORTANT
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-last_timestep = 24
+last_timestep = 99
 mask_value = -1.0  # This is the mask value for the data, not the missing labels
-total_epochs = 200  # Number of epochs for the training
+total_epochs = 50  # Number of epochs for the training
 mini_batch_size = 2048  # Batch size
 lstm_neurons = 32  # Depth of the LSTM layer
-strong_ro_dt = 200e-9  # Time interval for strong readout in the dataset in seconds
+strong_ro_dt = 20e-9  # Time interval for strong readout in the dataset in seconds
 
-rabi_amp = os.path.split(os.path.split(filepath)[0])[1]
-experiment_name = f"{rabi_amp}_prep_{prep_state}"
+experiment_name = f"cr_prep_C+X_T+Y"
 # This is where the trained trajectories will be saved to
-model_savepath = r"analysis/rabi_amp_sweep"
+model_savepath = r"analysis/cr"
 
 # Load the data prepaired in prep.py
 with h5py.File(os.path.join(filepath, 'training_validation_split.h5'), "r") as f:
