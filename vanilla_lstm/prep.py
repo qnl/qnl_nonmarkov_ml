@@ -37,8 +37,13 @@ if h5:
         return ['prep_C+X_T+Y', f'meas_C+{ax}_T+{ax}', 'prep_C+X_T+Y', f'meas_+{ax}_T+{ax}']
 
     dX = load_hdf5_.load_data(filepath, keys=keys_('X'), qubit='Q6', last_timestep=last_timestep)
+    console.print("Loaded X", style="bold red")
+
     dY = load_hdf5_.load_data(filepath, keys=keys_('Y'), qubit='Q6', last_timestep=last_timestep)
+    console.print("Loaded Y", style="bold red")
+
     dZ = load_hdf5_.load_data(filepath, keys=keys_('Z'), qubit='Q6', last_timestep=last_timestep)
+    console.print("Loaded Z", style="bold red")
 
 else:
 
@@ -55,11 +60,11 @@ dY = df.correct_timestep(dY)
 dZ = df.correct_timestep(dZ)
 
 # Get the expectation value from the data containers for each measurement axis.
-Tm, expX, expY, expZ = data_analysis.plot_average_trajectories(dX, dY, dZ,
+Tm, expX, expY, expZ = data_analysis.plot_strong_ro_results(dX, dY, dZ,
                                                                timesteps=np.arange(0, last_timestep+1),
                                                                fit_curves=[],
                                                                artificial_detuning=False,
-                                                               savepath=None)
+                                                               savepath=filepath)
 expX = np.array(expX)
 expY = np.array(expY)
 expZ = np.array(expZ)
