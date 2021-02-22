@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 import tensorflow as tf
 from qnl_trajectories.analysis import data_analysis
+from qnl_trajectories.analysis.load_hdf5 import load_hdf5
 # from .utils import *
 from qnl_nonmarkov_ml.vanilla_lstm.utils import *
 # from .vanilla_lstm import pad_labels
@@ -16,24 +17,38 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_7/prep_C+X_T+X"
-meas_X = r"meas_C+Z_T+X"
-meas_Y = r"meas_C+Z_T+Y"
-meas_Z = r"meas_C+Z_T+Z"
+filepath = r'/run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_02_17/cr_trajectories_test_028/data_transfer/2021_02_17/cr_trajectories_test_028'
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-last_timestep = 24
+last_timestep = 99
 mask_value = -1.0  # This is the mask value for the data, not the missing labels
 num_features = 2  # I and Q
-strong_ro_dt = 200e-9  # Time interval for strong readout in the dataset in seconds
+strong_ro_dt = 20e-9  # Time interval for strong readout in the dataset in seconds
 
 console.print("Loading data...", style="bold red")
 
 # Load the data from the pickle files.
-dX = data_analysis.load_data(os.path.join(filepath, meas_X), qubit='Q6', method='final')
-dY = data_analysis.load_data(os.path.join(filepath, meas_Y), qubit='Q6', method='final')
-dZ = data_analysis.load_data(os.path.join(filepath, meas_Z), qubit='Q6', method='final')
+h5 = True
+if h5:
+    load_hdf5_ = load_hdf5.LoadHDF5()
+
+    def keys_(ax):
+        return ['prep_C+X_T+Y', f'meas_C+{ax}_T+{ax}', 'prep_C+X_T+Y', f'meas_+{ax}_T+{ax}']
+
+    dX = load_hdf5_.load_data(filepath, keys=keys_('X'), qubit='Q6', last_timestep=last_timestep)
+    dY = load_hdf5_.load_data(filepath, keys=keys_('Y'), qubit='Q6', last_timestep=last_timestep)
+    dZ = load_hdf5_.load_data(filepath, keys=keys_('Z'), qubit='Q6', last_timestep=last_timestep)
+
+else:
+
+    meas_X = r"meas_C+Z_T+X"
+    meas_Y = r"meas_C+Z_T+Y"
+    meas_Z = r"meas_C+Z_T+Z"
+
+    dX = data_analysis.load_data(os.path.join(filepath, meas_X), qubit='Q6', method='final')
+    dY = data_analysis.load_data(os.path.join(filepath, meas_Y), qubit='Q6', method='final')
+    dZ = data_analysis.load_data(os.path.join(filepath, meas_Z), qubit='Q6', method='final')
 
 dX = df.correct_timestep(dX)
 dY = df.correct_timestep(dY)
