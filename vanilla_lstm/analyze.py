@@ -5,6 +5,7 @@ from tqdm import tqdm, trange
 import matplotlib
 
 from qnl_trajectories.analysis import data_analysis
+from qnl_trajectories.analysis.load_hdf5 import load_hdf5
 from qnl_trajectories.analysis.utils import greek
 from qnl_trajectories.analysis.nn_plotting import *
 from qnl_trajectories import x_color, y_color, z_color
@@ -19,28 +20,49 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
-last_timestep = 39
+last_timestep = 99
 
-datapath = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/local-data/2020_06_29/cr_trajectories_test_021/phase_0/prep_C+X_T+X" # Path of the data
-filepath = r"analysis/rabi_amp_sweep/200707_161016_phase_0_prep_+Y" # Path of the trained trajectories
+datapath = r'/run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_02_17/cr_trajectories_test_028/data_transfer/2021_02_17/cr_trajectories_test_028' # Path of the data
+filepath = r"analysis/cr/210222_211808_cr_prep_C+X_T+Y" # Path of the trained trajectories
 
-arrow_length_multiplier = 1.25 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
+arrow_length_multiplier = 1 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
 ROTATION_ANGLE = 0 # Rotation angle of the data
-# seq_lengths = np.arange(100, 780, 20)
-seq_lengths = np.arange(25, 200, 5) # Sequence lengths to process for the quiver maps, in units of weak measurement dt
+seq_lengths = np.arange(0, 100, 5) # Sequence lengths to process for the quiver maps, in units of weak measurement dt
 
 sweep_time = True # Bin the trajectories in time to fit parameters as function of time.
-time_window = 0.2e-6 # Use this time window when sweep_time = True
-t_mins = np.arange(0.6e-6, 7.4e-6, time_window) # Left side of the time window
-t_maxs = np.arange(0.6e-6 + time_window, 7.4e-6 + time_window, time_window) # Right side of the time window
+time_window = 0.1e-6 # Use this time window when sweep_time = True
+t_mins = np.arange(0.1e-6, 2e-6, time_window) # Left side of the time window
+t_maxs = np.arange(0.1e-6 + time_window, 2e-6 + time_window, time_window) # Right side of the time window
 
 console.print(f"Loading data...", style="bold green")
 
-dX = data_analysis.load_data(os.path.join(datapath, 'meas_X'), last_timestep=last_timestep, qubit='Q6')
-dY = data_analysis.load_data(os.path.join(datapath, 'meas_Y'), last_timestep=last_timestep, qubit='Q6')
-dZ = data_analysis.load_data(os.path.join(datapath, 'meas_Z'), last_timestep=last_timestep, qubit='Q6')
+h5 = True
+if h5:
+    load_hdf5_ = load_hdf5.LoadHDF5()
 
-Tm, expX, expY, expZ = data_analysis.plot_average_trajectories(dX, dY, dZ,
+    def keys_(ax):
+        return ['prep_C+X_T+Y', f'meas_C+{ax}_T+{ax}', 'prep_C+X_T+Y', f'meas_+{ax}_T+{ax}']
+
+    dX = load_hdf5_.load_data(datapath, keys=keys_('X'), qubit='Q6', last_timestep=last_timestep)
+    console.print("Loaded X", style="bold red")
+
+    dY = load_hdf5_.load_data(datapath, keys=keys_('Y'), qubit='Q6', last_timestep=last_timestep)
+    console.print("Loaded Y", style="bold red")
+
+    dZ = load_hdf5_.load_data(datapath, keys=keys_('Z'), qubit='Q6', last_timestep=last_timestep)
+    console.print("Loaded Z", style="bold red")
+
+else:
+
+    meas_X = r"meas_C+Z_T+X"
+    meas_Y = r"meas_C+Z_T+Y"
+    meas_Z = r"meas_C+Z_T+Z"
+
+    dX = data_analysis.load_data(os.path.join(datapath, meas_X), qubit='Q6', method='final')
+    dY = data_analysis.load_data(os.path.join(datapath, meas_Y), qubit='Q6', method='final')
+    dZ = data_analysis.load_data(os.path.join(datapath, meas_Z), qubit='Q6', method='final')
+
+Tm, expX, expY, expZ = data_analysis.plot_strong_ro_results(dX, dY, dZ,
                                                                timesteps=np.arange(0, last_timestep+1),
                                                                fit_curves=[],
                                                                artificial_detuning=False,
