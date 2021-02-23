@@ -34,6 +34,8 @@ time_window = 0.1e-6 # Use this time window when sweep_time = True
 t_mins = np.arange(0.1e-6, 2e-6, time_window) # Left side of the time window
 t_maxs = np.arange(0.1e-6 + time_window, 2e-6 + time_window, time_window) # Right side of the time window
 
+plot_sro = False  # plot strong readout results
+
 console.print(f"Loading data...", style="bold green")
 
 h5 = True
@@ -62,15 +64,16 @@ else:
     dY = data_analysis.load_data(os.path.join(datapath, meas_Y), qubit='Q6', method='final')
     dZ = data_analysis.load_data(os.path.join(datapath, meas_Z), qubit='Q6', method='final')
 
-Tm, expX, expY, expZ = data_analysis.plot_strong_ro_results(dX, dY, dZ,
-                                                               timesteps=np.arange(0, last_timestep+1),
-                                                               fit_curves=[],
-                                                               artificial_detuning=False,
-                                                               savepath=None)
+if plot_sro:
+    Tm, expX, expY, expZ = data_analysis.plot_strong_ro_results(dX, dY, dZ,
+                                                                   timesteps=np.arange(0, last_timestep+1),
+                                                                   fit_curves=[],
+                                                                   artificial_detuning=False,
+                                                                   savepath=None)
 
-expX = np.array(expX)
-expY = np.array(expY)
-expZ = np.array(expZ)
+    expX = np.array(expX)
+    expY = np.array(expY)
+    expZ = np.array(expZ)
 
 # Load the longest trained trajectories
 with h5py.File(os.path.join(filepath, 'trajectories.h5'), 'r') as f:
