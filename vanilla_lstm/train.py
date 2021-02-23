@@ -26,10 +26,17 @@ prep_state = "+X"  # Prep state, VERY IMPORTANT
 # Must be <= the last strong readout point
 last_timestep = 99
 mask_value = -1.0  # This is the mask value for the data, not the missing labels
-total_epochs = 50  # Number of epochs for the training
-mini_batch_size = 2048  # Batch size
+# total_epochs = 100  # Number of epochs for the training
+total_epochs = 20  # Number of epochs for the training
+mini_batch_size = 1024  # Batch size
 lstm_neurons = 32  # Depth of the LSTM layer
 strong_ro_dt = 20e-9  # Time interval for strong readout in the dataset in seconds
+
+# NN params
+init_dropout = 0
+init_learning_rate = 2e-2
+reduce_learning_rate_after = 6
+learning_rate_epoch_constant = 12
 
 experiment_name = f"cr_prep_C+X_T+Y"
 # This is where the trained trajectories will be saved to
@@ -67,6 +74,10 @@ console.print("Creating model...", style="bold red")
 m = MultiTimeStep(train_x, train_y, valid_x, valid_y, prep_state,
                   lstm_neurons=lstm_neurons, mini_batch_size=mini_batch_size, expX=expX, expY=expY, expZ=expZ,
                   savepath=model_savepath, experiment_name=experiment_name)
+m.init_learning_rate = init_learning_rate
+m.init_dropout = init_dropout
+m.reduce_learning_rate_after = reduce_learning_rate_after
+m.learning_rate_epoch_constant = learning_rate_epoch_constant
 
 # Check if the training data is equally distributed: whether it has equal number of sequence lengths and meas. axes
 make_a_pie(all_time_series_lengths, "All data - sequence lengths", savepath=m.savepath)
@@ -105,7 +116,6 @@ m.build_model()
 console.print("Compiling model...", style="bold red")
 m.compile_model()
 m.get_expected_accuracy()
-m.init_learning_rate = 1e-3
 
 plt.close('all')
 
