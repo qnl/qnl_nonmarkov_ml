@@ -202,7 +202,7 @@ for k, p in enumerate(prep_states):
 
     # Bin trajectories in the YZ plane, now taking into account trained trajectories of all lengths
     yz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="Y",
-                               prefix=f"prep_{p}/predictions",
+                               main_group=f'prep_{p}', #prefix=f"prep_{p}/predictions",
                                vertical_axis="Z", other_coordinate=x_for_yz_fit, t_min=t_min, t_max=t_max,
                                derivative_order=derivative_order)
     y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, eig1, eig2 = yz_output
@@ -222,7 +222,7 @@ for k, p in enumerate(prep_states):
     # Repeat the same procedure for the XY plane
     console.print(f"Making xy quiver plots", style="bold green")
     xy_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="X",
-                               prefix=f"prep_{p}/predictions",
+                               main_group=f'prep_{p}', #prefix=f"prep_{p}/predictions",
                                vertical_axis="Y", other_coordinate=z_for_xy_fit, t_min=t_min, t_max=t_max,
                                derivative_order=derivative_order)
     x_bin_centers, y_bin_centers, mean_binned_dX, mean_binned_dY, eig1, eig2 = xy_output
@@ -238,7 +238,7 @@ for k, p in enumerate(prep_states):
     # Repeat the same procedure for the xz plane
     console.print(f"Making xz quiver plots", style="bold green")
     xz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="X",
-                               prefix=f"prep_{p}/predictions",
+                               main_group=f'prep_{p}',  #prefix=f"prep_{p}/predictions",
                                vertical_axis="Z", other_coordinate=y_for_xz_fit, t_min=t_min, t_max=t_max,
                                derivative_order=derivative_order)
     x_bin_centers, z_bin_centers, mean_binned_dX, mean_binned_dZ, eig1, eig2 = xz_output

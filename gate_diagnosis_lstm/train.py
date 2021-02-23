@@ -12,7 +12,7 @@ from qutrit_lstm_network import MultiTimeStep, make_a_pie, pairwise_softmax, get
 from qutrit_lstm_network import plot_qubit_verification, plot_qutrit_verification, plot_qubit_histogram, plot_qutrit_histogram
 import gc
 
-dark_mode_compatible(dark_mode_color=r'#86888A')
+# dark_mode_compatible(dark_mode_color=r'#86888A')
 
 yaml_file = r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml"
 settings = load_settings(yaml_file)
@@ -34,6 +34,7 @@ num_features = settings['voltage_records']['num_features']
 num_prep_states = len(prep_states)
 data_points_for_prep_state = settings['voltage_records']['data_points_for_prep_state']
 annealing_steps = int(settings['training']['annealing_steps'])
+bidirectional = settings['training']['bidirectional']
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
@@ -119,7 +120,8 @@ m = MultiTimeStep(valid_x, valid_y, prep_states, n_levels,
                   prep_state_from_ro=prep_state_from_ro,
                   lstm_neurons=lstm_neurons, mini_batch_size=mini_batch_size,
                   annealing_steps=annealing_steps, epochs_per_annealing=epochs_per_anneal,
-                  savepath=model_savepath, experiment_name=experiment_name, **avgd_strong_ro_results)
+                  savepath=model_savepath, experiment_name=experiment_name, bidirectional=bidirectional,
+                  **avgd_strong_ro_results)
 
 del valid_x, valid_y
 

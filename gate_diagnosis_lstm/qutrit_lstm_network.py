@@ -89,7 +89,8 @@ def get_xyz(probabilities):
 class MultiTimeStep():
     def __init__(self, validation_features, validation_labels, prep_states, n_levels,
                  data_points_for_prep_state, prep_state_from_ro=False, lstm_neurons=32, mini_batch_size=500,
-                 epochs_per_annealing=10, annealing_steps=1, savepath=None, experiment_name='', **kwargs):
+                 bidirectional=False, epochs_per_annealing=10, annealing_steps=1, savepath=None,
+                 experiment_name='', **kwargs):
 
         tf.keras.backend.set_floatx('float32')  # Set the standard float format to float32
         self.lstm_neurons = lstm_neurons
@@ -113,6 +114,7 @@ class MultiTimeStep():
         self.prep_states = prep_states
         # Apply the initial state constraint for the following timestep
         self.data_points_for_prep_state = data_points_for_prep_state
+        self.bidirectional = bidirectional
 
         if n_levels == 2:
             self.expX = kwargs['expX']
@@ -211,14 +213,19 @@ class MultiTimeStep():
                                       input_shape=(self.sequence_length, self.num_features)))
 
         # Add an LSTM layer
-        self.model.add(layers.LSTM(self.lstm_neurons,
-                                   batch_input_shape=(self.sequence_length, self.num_features),
-                                   dropout=0.0, # Dropout of the hidden state
-                                   stateful=False,
-                                   kernel_regularizer=tf.keras.regularizers.l2(self.l2_regularization), # regularize input weights
-                                   recurrent_regularizer=tf.keras.regularizers.l2(self.l2_regularization), # regularize recurrent weights
-                                   bias_regularizer=tf.keras.regularizers.l2(self.l2_regularization), # regularize bias weights
-                                   return_sequences=True))
+        lstm_layer = layers.LSTM(self.lstm_neurons,
+                                 batch_input_shape=(self.sequence_length, self.num_features),
+                                 dropout=0.0, # Dropout of the hidden state
+                                 stateful=False,
+                                 kernel_regularizer=tf.keras.regularizers.l2(self.l2_regularization), # regularize input weights
+                                 recurrent_regularizer=tf.keras.regularizers.l2(self.l2_regularization), # regularize recurrent weights
+                                 bias_regularizer=tf.keras.regularizers.l2(self.l2_regularization), # regularize bias weights
+                                 return_sequences=True)
+
+        if self.bidirectional:
+            self.model.add(layers.Bidirectional(lstm_layer, merge_mode='concat'))
+        else:
+            self.model.add(lstm_layer)
 
         # Add a dropout layer
         # self.model.add(layers.TimeDistributed(layers.Dropout(self.init_dropout)))
@@ -267,30 +274,6 @@ class MultiTimeStep():
                                             #                self.savepath, **self.avgd_strong_ro_results),
                                             # DropOutScheduler(self.dropout_schedule)])
         return history
-
-    # def fit_model_with_generator(self, dataset, epochs, verbose_level=1):
-    #     LRScheduler = tf.keras.callbacks.LearningRateScheduler(self.learning_rate_schedule)
-    #     # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=self.savepath, histogram_freq=1)
-    #     # loss_tracker_callback = LossTracker(self.validation_features,
-    #     #                                     self.validation_labels,
-    #     #                                     self.n_levels,
-    #     #                                     mask_value=self.mask_value,
-    #     #                                     savepath=self.savepath,
-    #     #                                     prep_x=self.prep_x, prep_y=self.prep_y, prep_z=self.prep_z)
-    #
-    #     history = self.model.fit(x=dataset, epochs=epochs,
-    #                              steps_per_epoch=np.int(self.validation_features.shape[0] / self.mini_batch_size),
-    #                              batch_size=self.mini_batch_size,
-    #                              validation_data=(self.validation_features, self.validation_labels),
-    #                              verbose=verbose_level, shuffle=True,
-    #                              callbacks=[TrainingPlot(),
-    #                                         LRScheduler])
-    #                                         # loss_tracker_callback,
-    #                                         # ValidationPlot(self.validation_features,
-    #                                         #                self.validation_labels, self.n_levels, self.mini_batch_size,
-    #                                         #                self.savepath, **self.avgd_strong_ro_results),
-    #                                         # DropOutScheduler(self.dropout_schedule)])
-    #     return history
 
     def learning_rate_schedule(self, epoch):
         epoch = tf.math.floormod(epoch, self.epochs_per_annealing)
@@ -369,7 +352,7 @@ class MultiTimeStep():
 
         # Force the state of average readout results to be equal to the strong readout results.
         lagrange_1 = tf.constant(1.0, dtype=K.floatx()) # Readout cross-entropy
-        lagrange_2 = tf.constant(0.0, dtype=K.floatx()) # Initial state
+        lagrange_2 = tf.constant(1.0, dtype=K.floatx()) # Initial state
         lagrange_3 = tf.constant(0.0, dtype=K.floatx()) # Purity constraint
         lagrange_4 = tf.constant(0.1, dtype=K.floatx()) # Prep state encoding
 
