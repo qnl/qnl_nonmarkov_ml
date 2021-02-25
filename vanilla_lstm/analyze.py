@@ -27,42 +27,48 @@ filepath = r"analysis/cr/210222_211808_cr_prep_C+X_T+Y" # Path of the trained tr
 
 arrow_length_multiplier = 1 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
 ROTATION_ANGLE = 0 # Rotation angle of the data
-seq_lengths = np.arange(0, 100, 5) # Sequence lengths to process for the quiver maps, in units of weak measurement dt
+seq_lengths = np.arange(5, 490, 5) # Sequence lengths to process for the quiver maps, in units of weak measurement dt
 
 sweep_time = True # Bin the trajectories in time to fit parameters as function of time.
 time_window = 0.1e-6 # Use this time window when sweep_time = True
-t_mins = np.arange(0.1e-6, 2e-6, time_window) # Left side of the time window
-t_maxs = np.arange(0.1e-6 + time_window, 2e-6 + time_window, time_window) # Right side of the time window
+t_min_ = 0.1e-6
+t_max_ = 2e-6
+
+t_mins = np.arange(t_min_, t_max_, time_window) # Left side of the time window
+t_maxs = np.arange(t_min_ + time_window, t_max_ + time_window, time_window) # Right side of the time window
 
 plot_sro = False  # plot strong readout results
 
 console.print(f"Loading data...", style="bold green")
 
 h5 = True
-if h5:
-    load_hdf5_ = load_hdf5.LoadHDF5()
+load = False
 
-    def keys_(ax):
-        return ['prep_C+X_T+Y', f'meas_C+{ax}_T+{ax}', 'prep_C+X_T+Y', f'meas_+{ax}_T+{ax}']
+if load:
+    if h5:
+        load_hdf5_ = load_hdf5.LoadHDF5()
 
-    dX = load_hdf5_.load_data(datapath, keys=keys_('X'), qubit='Q6', last_timestep=last_timestep)
-    console.print("Loaded X", style="bold red")
+        def keys_(ax):
+            return ['prep_C+X_T+Y', f'meas_C+{ax}_T+{ax}', 'prep_C+X_T+Y', f'meas_+{ax}_T+{ax}']
 
-    dY = load_hdf5_.load_data(datapath, keys=keys_('Y'), qubit='Q6', last_timestep=last_timestep)
-    console.print("Loaded Y", style="bold red")
+        dX = load_hdf5_.load_data(datapath, keys=keys_('X'), qubit='Q6', last_timestep=last_timestep)
+        console.print("Loaded X", style="bold red")
 
-    dZ = load_hdf5_.load_data(datapath, keys=keys_('Z'), qubit='Q6', last_timestep=last_timestep)
-    console.print("Loaded Z", style="bold red")
+        dY = load_hdf5_.load_data(datapath, keys=keys_('Y'), qubit='Q6', last_timestep=last_timestep)
+        console.print("Loaded Y", style="bold red")
 
-else:
+        dZ = load_hdf5_.load_data(datapath, keys=keys_('Z'), qubit='Q6', last_timestep=last_timestep)
+        console.print("Loaded Z", style="bold red")
 
-    meas_X = r"meas_C+Z_T+X"
-    meas_Y = r"meas_C+Z_T+Y"
-    meas_Z = r"meas_C+Z_T+Z"
+    else:
 
-    dX = data_analysis.load_data(os.path.join(datapath, meas_X), qubit='Q6', method='final')
-    dY = data_analysis.load_data(os.path.join(datapath, meas_Y), qubit='Q6', method='final')
-    dZ = data_analysis.load_data(os.path.join(datapath, meas_Z), qubit='Q6', method='final')
+        meas_X = r"meas_C+Z_T+X"
+        meas_Y = r"meas_C+Z_T+Y"
+        meas_Z = r"meas_C+Z_T+Z"
+
+        dX = data_analysis.load_data(os.path.join(datapath, meas_X), qubit='Q6', method='final')
+        dY = data_analysis.load_data(os.path.join(datapath, meas_Y), qubit='Q6', method='final')
+        dZ = data_analysis.load_data(os.path.join(datapath, meas_Z), qubit='Q6', method='final')
 
 if plot_sro:
     Tm, expX, expY, expZ = data_analysis.plot_strong_ro_results(dX, dY, dZ,
@@ -90,27 +96,27 @@ Xf = xyz_pred[..., 0]
 Yf = xyz_pred[..., 1]
 Zf = xyz_pred[..., 2]
 
-# Comparison of trajectories with strong readout
-fig = plt.figure()
-plt.plot(time[:np.shape(Xf)[1]]*1e6, np.mean(Xf, axis=0), color=x_color, lw=2)
-plt.plot(Tm * 1e6, expX, 'o', color=x_color, markersize=4)
-plt.plot(time[:np.shape(Xf)[1]]*1e6, np.mean(Yf, axis=0), color=y_color, lw=2)
-plt.plot(Tm * 1e6, expY, 'o', color=y_color, markersize=4)
-plt.plot(time[:np.shape(Xf)[1]]*1e6, np.mean(Zf, axis=0), color=z_color, lw=2)
-plt.plot(Tm * 1e6, expZ, 'o', color=z_color, markersize=4)
-plt.title("Comparison average trajectories and strong readout")
-plt.xlabel(f"Time ({greek('mu')}s)")
-plt.xlim(0, np.max(time[:np.shape(Xf)[1]]*1e6))
-fig.savefig(os.path.join(filepath, "001_traj_strong_ro_comparison.png"), dpi=200, bbox_inches='tight')
-
-# Average purity vs. time
-average_purity = np.mean(np.sqrt(Xf**2 + Yf**2 + Zf**2), axis=0)
-fig = plt.figure()
-plt.plot(time[:np.shape(Xf)[1]]*1e6, average_purity)
-plt.ylabel(r"$\mathrm{Tr}(\rho^2)$")
-plt.xlabel(f"Time ({greek('mu')}s)")
-plt.xlim(0, np.max(time[:np.shape(Xf)[1]]*1e6))
-fig.savefig(os.path.join(filepath, "001_traj_avg_purity.png"), dpi=200, bbox_inches='tight')
+# # Comparison of trajectories with strong readout
+# fig = plt.figure()
+# plt.plot(time[:np.shape(Xf)[1]]*1e6, np.mean(Xf, axis=0), color=x_color, lw=2)
+# plt.plot(Tm * 1e6, expX, 'o', color=x_color, markersize=4)
+# plt.plot(time[:np.shape(Xf)[1]]*1e6, np.mean(Yf, axis=0), color=y_color, lw=2)
+# plt.plot(Tm * 1e6, expY, 'o', color=y_color, markersize=4)
+# plt.plot(time[:np.shape(Xf)[1]]*1e6, np.mean(Zf, axis=0), color=z_color, lw=2)
+# plt.plot(Tm * 1e6, expZ, 'o', color=z_color, markersize=4)
+# plt.title("Comparison average trajectories and strong readout")
+# plt.xlabel(f"Time ({greek('mu')}s)")
+# plt.xlim(0, np.max(time[:np.shape(Xf)[1]]*1e6))
+# fig.savefig(os.path.join(filepath, "001_traj_strong_ro_comparison.png"), dpi=200, bbox_inches='tight')
+#
+# # Average purity vs. time
+# average_purity = np.mean(np.sqrt(Xf**2 + Yf**2 + Zf**2), axis=0)
+# fig = plt.figure()
+# plt.plot(time[:np.shape(Xf)[1]]*1e6, average_purity)
+# plt.ylabel(r"$\mathrm{Tr}(\rho^2)$")
+# plt.xlabel(f"Time ({greek('mu')}s)")
+# plt.xlim(0, np.max(time[:np.shape(Xf)[1]]*1e6))
+# fig.savefig(os.path.join(filepath, "001_traj_avg_purity.png"), dpi=200, bbox_inches='tight')
 
 dX = Xf[:, 1:] - Xf[:, :-1]
 dY = Yf[:, 1:] - Yf[:, :-1]
@@ -236,37 +242,43 @@ if sweep_time:
     z_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
 
     for t_min, t_max in tqdm(zip(t_mins, t_maxs)):
-        y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, eig1, eig2 = calculate_drho([filepath], x_bins, y_bins,
-                                                                                             z_bins, seq_lengths, horizontal_axis="Y",
-                                                                                             vertical_axis="Z",
+        x_bin_centers, y_bin_centers, mean_binned_dX, mean_binned_dY, eig1, eig2 = calculate_drho([filepath], x_bins, y_bins,
+                                                                                             z_bins, seq_lengths, horizontal_axis="X",
+                                                                                             vertical_axis="Y",
                                                                                              other_coordinate=0.0,
                                                                                              t_min=t_min, t_max=t_max)
 
-        fr, ferr = plot_and_fit_hamiltonian(y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, dt, theta=ROTATION_ANGLE,
+        out = plot_and_fit_hamiltonian(x_bin_centers, y_bin_centers, mean_binned_dX, mean_binned_dY, dt,
+                                            theta=ROTATION_ANGLE,
                                             savepath=os.path.join(filepath, 'traj_swarm'),
-                                            axis_identifier='yz', plot=True, ax_fig=None, fit=True,
+                                            axis_identifier='xy',
+                                            plot=True,
+                                            ax_fig=None,
+                                            fit=False,
                                             arrow_length_multiplier=arrow_length_multiplier)
 
-        omegas.append(fr[1] / (2 * np.pi))
-        gammas.append(fr[0] / (2 * np.pi))
-        domegas.append(ferr[1] / (2 * np.pi))
-        dgammas.append(ferr[0] / (2 * np.pi))
+        # fr, ferr = out
+        # omegas.append(fr[1] / (2 * np.pi))
+        # gammas.append(fr[0] / (2 * np.pi))
+        # domegas.append(ferr[1] / (2 * np.pi))
+        # dgammas.append(ferr[0] / (2 * np.pi))
 
     # fit_results = np.array(fit_results)
     # yerr = fit_results * np.sqrt((ferr[0]/fr[0])**2 + (ferr[1]/fr[1])**2)
-    fig = plt.figure()
-    plt.errorbar(0.5 * (t_mins + t_maxs) * 1e6, np.array(omegas) / (1e6), yerr=np.array(domegas)/1e6, color='gray',
-                 fmt='o', label=f"{greek('Omega')}/2{greek('pi')} (instantaneous)")
-    plt.hlines(fr_all_times[1] / (2 * np.pi * 1e6), 0, np.max(t_maxs)*1e6, linestyles='--', color='gray',
-               label=f"{greek('Omega')}/2{greek('pi')} (all trajectories)")
 
-    plt.errorbar(0.5 * (t_mins + t_maxs) * 1e6, np.array(gammas) / (1e6), yerr=np.array(dgammas)/1e6, color='navy',
-                 fmt='o', label=f"{greek('Gamma')}/2{greek('pi')} (instantaneous)")
-    plt.hlines(fr_all_times[0] / (2 * np.pi * 1e6), 0, np.max(t_maxs)*1e6, linestyles='--', color='navy',
-               label=f"{greek('Gamma')}/2{greek('pi')} (all trajectories)")
-
-    plt.xlim(0, np.max(t_maxs) * 1e6)
-    plt.xlabel(f"Time ({greek('mu')}s)")
-    plt.ylabel(f"{greek('Omega')}/2{greek('pi')}, {greek('Gamma')}/2{greek('pi')} (MHz)")
-    plt.legend(loc=0, frameon=False)
-    fig.savefig(os.path.join(filepath, "001_traj_hamiltonian_fit_vs_time.png"), dpi=200, bbox_inches='tight')
+    # fig = plt.figure()
+    # plt.errorbar(0.5 * (t_mins + t_maxs) * 1e6, np.array(omegas) / (1e6), yerr=np.array(domegas)/1e6, color='gray',
+    #              fmt='o', label=f"{greek('Omega')}/2{greek('pi')} (instantaneous)")
+    # plt.hlines(fr_all_times[1] / (2 * np.pi * 1e6), 0, np.max(t_maxs)*1e6, linestyles='--', color='gray',
+    #            label=f"{greek('Omega')}/2{greek('pi')} (all trajectories)")
+    #
+    # plt.errorbar(0.5 * (t_mins + t_maxs) * 1e6, np.array(gammas) / (1e6), yerr=np.array(dgammas)/1e6, color='navy',
+    #              fmt='o', label=f"{greek('Gamma')}/2{greek('pi')} (instantaneous)")
+    # plt.hlines(fr_all_times[0] / (2 * np.pi * 1e6), 0, np.max(t_maxs)*1e6, linestyles='--', color='navy',
+    #            label=f"{greek('Gamma')}/2{greek('pi')} (all trajectories)")
+    #
+    # plt.xlim(0, np.max(t_maxs) * 1e6)
+    # plt.xlabel(f"Time ({greek('mu')}s)")
+    # plt.ylabel(f"{greek('Omega')}/2{greek('pi')}, {greek('Gamma')}/2{greek('pi')} (MHz)")
+    # plt.legend(loc=0, frameon=False)
+    # fig.savefig(os.path.join(filepath, "001_traj_hamiltonian_fit_vs_time.png"), dpi=200, bbox_inches='tight')

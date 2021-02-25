@@ -27,19 +27,20 @@ prep_state = "+X"  # Prep state, VERY IMPORTANT
 last_timestep = 99
 mask_value = -1.0  # This is the mask value for the data, not the missing labels
 # total_epochs = 100  # Number of epochs for the training
-total_epochs = 20  # Number of epochs for the training
+total_epochs = 50  # Number of epochs for the training
 mini_batch_size = 1024  # Batch size
-lstm_neurons = 32  # Depth of the LSTM layer
+lstm_neurons = 48  # Depth of the LSTM layer
 strong_ro_dt = 20e-9  # Time interval for strong readout in the dataset in seconds
 
 # NN params
 init_dropout = 0
 init_learning_rate = 2e-2
 reduce_learning_rate_after = 6
-learning_rate_epoch_constant = 12
+learning_rate_epoch_constant = 20
 
-experiment_name = f"cr_prep_C+X_T+Y"
+experiment_name = f"cr_trajectories_test_028_prep_C+X_T+Y"
 # This is where the trained trajectories will be saved to
+# model_savepath = r"analysis/cr/cr_trajectories_test_028"
 model_savepath = r"analysis/cr"
 
 # Load the data prepaired in prep.py
