@@ -11,7 +11,7 @@ from qnl_trajectories.analysis.nn_plotting import *
 from qnl_trajectories import x_color, y_color, z_color
 
 from qnl_nonmarkov_ml.vanilla_lstm.utils import *
-from vanilla_lstm import *
+from qnl_nonmarkov_ml.vanilla_lstm.vanilla_lstm import *
 from rich import print
 from rich.console import Console
 console = Console()
@@ -22,12 +22,12 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 # Must be <= the last strong readout point
 last_timestep = 99
 
-datapath = r'/run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_02_17/cr_trajectories_test_028/data_transfer/2021_02_17/cr_trajectories_test_028' # Path of the data
-filepath = r"analysis/cr/210222_211808_cr_prep_C+X_T+Y" # Path of the trained trajectories
+datapath = r'/run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_02_27/cr_trajectories_test_029/data_transfer/2021_02_27/cr_trajectories_test_029'
+filepath = r"analysis/cr/cr_trajectories_test_029/210301_092924_cr_trajectories_test_029_prep_C+X_T+Y" # Path of the trained trajectories
 
 arrow_length_multiplier = 1 # Artificially lengthens the arrows. Default 1.0 means length is true to actual length
 ROTATION_ANGLE = 0 # Rotation angle of the data
-seq_lengths = np.arange(5, 490, 5) # Sequence lengths to process for the quiver maps, in units of weak measurement dt
+seq_lengths = np.arange(6, 594, 6) # Sequence lengths to process for the quiver maps, in units of weak measurement dt
 
 sweep_time = True # Bin the trajectories in time to fit parameters as function of time.
 time_window = 0.1e-6 # Use this time window when sweep_time = True

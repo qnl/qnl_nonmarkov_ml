@@ -19,7 +19,7 @@ tf.debugging.set_log_device_placement(False)
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r'/run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_02_17/cr_trajectories_test_028/data_transfer/2021_02_17/cr_trajectories_test_028'
+filepath = r'/run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_02_27/cr_trajectories_test_029/data_transfer/2021_02_27/cr_trajectories_test_029'
 prep_state = "+X"  # Prep state, VERY IMPORTANT
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
@@ -27,21 +27,21 @@ prep_state = "+X"  # Prep state, VERY IMPORTANT
 last_timestep = 99
 mask_value = -1.0  # This is the mask value for the data, not the missing labels
 # total_epochs = 100  # Number of epochs for the training
-total_epochs = 50  # Number of epochs for the training
-mini_batch_size = 1024  # Batch size
-lstm_neurons = 48  # Depth of the LSTM layer
-strong_ro_dt = 20e-9  # Time interval for strong readout in the dataset in seconds
+total_epochs = 30  # Number of epochs for the training
+mini_batch_size = 128  # Batch size
+lstm_neurons = 32  # Depth of the LSTM layer
+strong_ro_dt = 30e-9  # Time interval for strong readout in the dataset in seconds
 
 # NN params
-init_dropout = 0
-init_learning_rate = 2e-2
+init_dropout = 0.1
+init_learning_rate = 1e-3
 reduce_learning_rate_after = 6
-learning_rate_epoch_constant = 20
+learning_rate_epoch_constant = 12
 
-experiment_name = f"cr_trajectories_test_028_prep_C+X_T+Y"
+experiment_name = f"cr_trajectories_test_029_prep_C+X_T+Y"
 # This is where the trained trajectories will be saved to
 # model_savepath = r"analysis/cr/cr_trajectories_test_028"
-model_savepath = r"analysis/cr"
+model_savepath = r"analysis/cr/cr_trajectories_test_029"
 
 # Load the data prepaired in prep.py
 with h5py.File(os.path.join(filepath, 'training_validation_split.h5'), "r") as f:
@@ -72,6 +72,7 @@ with h5py.File(os.path.join(filepath, 'training_validation_split.h5'), "r") as f
 
 # Initialize the model
 console.print("Creating model...", style="bold red")
+
 m = MultiTimeStep(train_x, train_y, valid_x, valid_y, prep_state,
                   lstm_neurons=lstm_neurons, mini_batch_size=mini_batch_size, expX=expX, expY=expY, expZ=expZ,
                   savepath=model_savepath, experiment_name=experiment_name)

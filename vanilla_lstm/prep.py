@@ -17,14 +17,14 @@ dark_mode_compatible(dark_mode_color=r'#86888A')
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
-filepath = r'/run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_02_17/cr_trajectories_test_028/data_transfer/2021_02_17/cr_trajectories_test_028'
+filepath = r'/run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_02_27/cr_trajectories_test_029/data_transfer/2021_02_27/cr_trajectories_test_029'
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.
 # Must be <= the last strong readout point
 last_timestep = 99
 mask_value = -1.0  # This is the mask value for the data, not the missing labels
 num_features = 2  # I and Q
-strong_ro_dt = 20e-9  # Time interval for strong readout in the dataset in seconds
+strong_ro_dt = 30e-9  # Time interval for strong readout in the dataset in seconds
 
 console.print("Loading data...", style="bold red")
 
@@ -104,7 +104,9 @@ batch_size, sequence_length = np.shape(padded_I)
 # padded_labels = pad_labels(labels, (n + int(strong_ro_dt/dt) * np.array(timesteps)).tolist() * 3,
 #                            reps_per_timestep, mask_value)
 _n = 0  # placeholder value to get code to run; need to figure out source of error and fix
-padded_labels = pad_labels(labels, _n + np.array((int(strong_ro_dt/dt) * np.array(timesteps)).tolist() * 3), reps_per_timestep, mask_value)
+
+padded_labels = pad_labels(labels, _n + np.array((int(np.round(strong_ro_dt/dt)) * np.array(timesteps)).tolist() * 3),
+                           reps_per_timestep, mask_value)
 
 # print(np.shape(padded_labels))
 # _sel = 5*np.arange(1, 5) - 1
