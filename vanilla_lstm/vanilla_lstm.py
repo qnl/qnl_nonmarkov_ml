@@ -2,12 +2,12 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras import backend as K
-from callbacks import TrainingPlot
+from .callbacks import TrainingPlot
 from matplotlib import pyplot as plt
 from matplotlib import colors
 import os, time, h5py
 from scipy.optimize import curve_fit
-from utils import x_color, y_color, z_color
+from .utils import x_color, y_color, z_color
 
 def get_trajectories_within_window(predictions, target_value, RO_results, pass_window=0.025, verbose=True):
     # Select traces where the final index is within Z +/- the pass_window
