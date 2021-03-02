@@ -2,12 +2,10 @@ import sys, os, h5py
 import numpy as np
 import tensorflow as tf
 from rich.console import Console
-console = Console()
-
-sys.path.append(r"/home/qnl/Git-repositories")
 from qnl_trajectories import data_analysis
 from utils import *
 from vanilla_lstm import *
+console = Console()
 
 dark_mode_compatible(dark_mode_color=r'#86888A')
 

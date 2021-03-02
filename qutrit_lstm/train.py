@@ -6,14 +6,14 @@ from rich import print
 from rich.console import Console
 console = Console()
 import matplotlib.pyplot as plt
-from utils import dark_mode_compatible, load_settings, save_settings
-from qutrit_lstm_network import MultiTimeStep, make_a_pie, pairwise_softmax, get_xyz, get_histogram, plot_histogram
-from qutrit_lstm_network import plot_verification
+from qnl_nonmarkov_ml.qutrit_lstm.utils import dark_mode_compatible, load_settings, save_settings
+from qnl_nonmarkov_ml.qutrit_lstm.qutrit_lstm_network import MultiTimeStep, make_a_pie, pairwise_softmax, get_xyz, get_histogram, plot_histogram
+from qnl_nonmarkov_ml.qutrit_lstm.qutrit_lstm_network import plot_verification
 
 dark_mode_compatible(dark_mode_color=r'#86888A')
 
-yaml_file = r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/qutrit_lstm/settings.yaml"
-settings = load_settings(yaml_file)
+yaml_file = r"settings.yaml"
+settings = load_settings(yaml_file, relative=True)
 
 print(tf.config.experimental.list_physical_devices('CPU'))
 print(tf.config.experimental.list_physical_devices('GPU'))
@@ -24,7 +24,7 @@ tf.debugging.set_log_device_placement(False)
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
 filepath = settings['voltage_records']['filepath']
-prep_state = settings['voltage_records']['prep_state'] # Prep state, VERY IMPORTANT
+prep_state = settings['voltage_records']['prep_state']  # Prep state, VERY IMPORTANT
 experiment_name = settings['training']['experiment_id']
 
 # last_timestep determines the length of trajectories used for training in units of strong_ro_dt.

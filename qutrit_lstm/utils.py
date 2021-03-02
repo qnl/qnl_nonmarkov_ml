@@ -1,7 +1,12 @@
 import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
-import h5py, yaml
+import h5py
+import yaml
+import os
+from qnl_trajectories.analysis.load_hdf5 import load_hdf5
+from rich.console import Console
+
 
 x_color = plt.cm.Reds(0.6)
 y_color = plt.cm.Blues(0.6)
@@ -12,8 +17,16 @@ save_options = {"dpi" : 200,
                 "pad_inches" : 0.05,
                 "transparent" : True}
 
-def load_settings(yaml_path):
-    with open(yaml_path) as file:
+
+def load_settings(yaml_path, relative=False):
+
+    if relative:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        yaml_path_ = os.path.join(dir_path, yaml_path)
+    else:
+        yaml_path_ = yaml_path
+
+    with open(yaml_path_) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
     return data
 

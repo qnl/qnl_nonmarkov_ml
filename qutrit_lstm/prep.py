@@ -2,13 +2,14 @@ import sys, os, h5py
 import numpy as np
 import tensorflow as tf
 from rich.console import Console
-from utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, dark_mode_compatible
-from qutrit_lstm_network import pad_labels
+from qnl_nonmarkov_ml.qutrit_lstm.utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, dark_mode_compatible
+from qnl_nonmarkov_ml.qutrit_lstm.qutrit_lstm_network import pad_labels
+from qnl_trajectories.analysis.load_hdf5 import load_hdf5
 console = Console()
 
 dark_mode_compatible(dark_mode_color=r'#86888A')
 
-settings = load_settings(r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/qutrit_lstm/settings.yaml")
+settings = load_settings(r"settings.yaml", relative=True)
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
@@ -24,11 +25,29 @@ strong_ro_dt = settings['voltage_records']['strong_ro_dt'] # Time interval for s
 console.print("Loading data...", style="bold red")
 
 # Load the data from the h5 file
-d = load_repackaged_data(os.path.join(filepath, filename))
+# d = load_repackaged_data(os.path.join(filepath, filename))
+# dX = d['meas_X']
+# dY = d['meas_Y']
+# dZ = d['meas_Z']
 
-dX = d['meas_X']
-dY = d['meas_Y']
-dZ = d['meas_Z']
+
+# load from h5 file
+load_hdf5_ = load_hdf5.LoadHDF5()
+def keys_(ax):
+    tp = settings['loading']['target_prep_state']
+    cp = settings['loading']['control_prep_state']
+    prep = f"prep_C{cp}_T{tp}"
+    return [prep, f'meas_C+{ax}_T+{ax}', prep, f'meas_+{ax}_T+{ax}']
+
+
+last_timestep = None
+dX = load_hdf5_.load_data(filepath, keys=keys_('X'), qubit='Q6', last_timestep=last_timestep)
+console.print("Loaded X", style="bold red")
+dY = load_hdf5_.load_data(filepath, keys=keys_('Y'), qubit='Q6', last_timestep=last_timestep)
+console.print("Loaded Y", style="bold red")
+dZ = load_hdf5_.load_data(filepath, keys=keys_('Z'), qubit='Q6', last_timestep=last_timestep)
+console.print("Loaded Z", style="bold red")
+
 
 Px = np.array([np.sum(dX[key]['final_ro_results'] == 1) / len(dX[key]['final_ro_results']) for key in dX.keys()])
 Py = np.array([np.sum(dY[key]['final_ro_results'] == 1) / len(dY[key]['final_ro_results']) for key in dY.keys()])
