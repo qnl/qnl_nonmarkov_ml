@@ -11,11 +11,11 @@ analysis:
     - 100000.0
     - 0.0
     omega_fixed: true
-  subdir: /media/qnl/Extreme SSD/Gate diagnosis/2020_11_19/SQG_RNN_1000_ns_err_amp_0.0000_leakage_ratio_0.00/analysis/210212_132157_all_prep_states_dt_2ns
+  subdir: /media/qnl/Extreme SSD/Gate diagnosis/2021_02_24/SQG_RNN_qutrit_800_ns_err_amp_0.0000_leakage_ratio_0.25/analysis/210306_161646_all_prep_states_dt_5ns
   sweep_time: false
   t_max: null
   t_min: null
-  trajectory_dt: 2.0e-09
+  trajectory_dt: 5.0e-09
   x_for_yz_fit: null
   y_for_xz_fit: null
   z_for_xy_fit: null
@@ -33,23 +33,26 @@ training:
   annealing_steps: 2
   bidirectional: false
   epochs_per_anneal: 8
-  experiment_id: all_prep_states_dt_2ns
+  experiment_id: all_prep_states_dt_5ns
   learning_rate_epoch_constant: 3
   learning_rate_init: 0.001
   learning_rate_reduce_after: 0
   lstm_neurons: 32
   mask_value: -1.0
-  mini_batch_size: 512
+  mini_batch_size: 256
   prep_state_from_ro: true
 voltage_records:
-  data_points_for_prep_state: 20
-  filename: all_prep_states_dt_2ns_meas_XYZ.h5
-  filepath: /media/qnl/Extreme SSD/Gate diagnosis/2020_11_19/SQG_RNN_1000_ns_err_amp_0.0000_leakage_ratio_0.00
+  data_points_for_prep_state: 8
+  filename: SQG_RNN_qutrit_800_ns_err_amp_0.0000_leakage_ratio_0.25_dt_5ns_all_preps.h5
+  filepath: /media/qnl/Extreme SSD/Gate diagnosis/2021_02_24/SQG_RNN_qutrit_800_ns_err_amp_0.0000_leakage_ratio_0.25
   multiple_prep_states: true
-  n_levels: 2
+  n_levels: 3
   num_features: 2
   prep_states:
   - g
   - e
+  - f
   - +Y
   - -Y
+  - +Y_ef
+  - -Y_ef

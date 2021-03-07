@@ -12,6 +12,8 @@ from qnl_trajectories import x_color, y_color, z_color, Id, sigmaX, sigmaY, sigm
 
 from utils import *
 from qutrit_lstm_network import *
+from visualization import *
+from verification import *
 from rich import print
 from rich.console import Console
 console = Console()

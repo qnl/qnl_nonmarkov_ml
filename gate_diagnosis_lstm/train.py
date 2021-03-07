@@ -7,9 +7,10 @@ from rich.console import Console
 from scipy.special import softmax
 console = Console()
 import matplotlib.pyplot as plt
-from utils import dark_mode_compatible, load_settings, save_settings
-from qutrit_lstm_network import MultiTimeStep, make_a_pie, pairwise_softmax, get_xyz, get_histogram
-from qutrit_lstm_network import plot_qubit_verification, plot_qutrit_verification, plot_qubit_histogram, plot_qutrit_histogram
+from utils import load_settings, save_settings
+from qutrit_lstm_network import MultiTimeStep
+from visualization import plot_qubit_histogram, plot_qutrit_histogram, make_a_pie, get_histogram, dark_mode_compatible
+from verification import plot_qubit_verification, plot_qutrit_verification, pairwise_softmax, get_xyz
 import gc
 
 # dark_mode_compatible(dark_mode_color=r'#86888A')
@@ -90,7 +91,9 @@ if len(prep_states) == 1:
     valid_x = valid_x[..., :-1]
     valid_y = valid_y[..., 1:]
 
-# Construct Tensorflow dataset
+# Construct Tensorflow dataset. Note: this was used as a test to avoid loading large datasets into memory
+# However, the overhead of loading these datasets reduced the training speed by a huge amount.
+# Not advised to use this again, but the code here does work.
 # class generator:
 #     def __init__(self):
 #         self.file = os.path.join(filepath, settings['prep']['output_filename'])

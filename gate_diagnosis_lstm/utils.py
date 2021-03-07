@@ -43,18 +43,39 @@ qutrit_prep_dict = {"+X": {"prep_z": [0.5, 0.5, 0.0]},
                     "-Y": {"prep_z": [0.5, 0.5, 0.0]},
                     "+Z": {"prep_z": [1.0, 0.0, 0.0]},
                     "-Z": {"prep_z": [0.0, 1.0, 0.0]},
-                    "f": {"prep_z": [0.0, 0.0, 1.0]}}
+                    "f": {"prep_z": [0.0, 0.0, 1.0]},
+                    "+X_ef" : {"prep_z" : [0.0, 0.5, 0.5]},
+                    "-X_ef" : {"prep_z" : [0.0, 0.5, 0.5]},
+                    "+Y_ef" : {"prep_z" : [0.0, 0.5, 0.5]},
+                    "-Y_ef" : {"prep_z" : [0.0, 0.5, 0.5]}}
 
 def load_settings(yaml_path):
+    """
+    Load prep, training and analysis settings from the settings.yaml file in this folder
+    :param yaml_path: path to the settings.yaml file
+    :return: Settings dictionary
+    """
     with open(yaml_path) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
     return data
 
 def save_settings(yaml_path, settings_dict):
+    """
+    Writes settings_dict to settings.yaml in this folder
+    :param yaml_path: Path to the settings.yaml file
+    :param settings_dict: Settings dictionary
+    :return: None
+    """
     with open(yaml_path, 'w') as file:
         yaml.dump(settings_dict, file, sort_keys=True)
 
 def find_nearest(array, value):
+    """
+    Finds the index of the closest entry to value in an array
+    :param array: Search for value in this array
+    :param value: Search for this value
+    :return: Index in array corresponding to the closest entry to value.
+    """
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return idx
@@ -109,16 +130,6 @@ def load_repackaged_data(filename, multi_prep_state=False):
 
     return return_dict
 
-def dark_mode_compatible(dark_mode_color=r'#86888A'):
-    matplotlib.rc('axes', edgecolor=dark_mode_color)
-    matplotlib.rc('text', color=dark_mode_color)
-    matplotlib.rc('xtick', color=dark_mode_color)
-    matplotlib.rc('ytick', color=dark_mode_color)
-    matplotlib.rc('axes', labelcolor=dark_mode_color)
-    matplotlib.rc('axes', facecolor='none')
-    matplotlib.rc('figure', edgecolor='none')  # .edgecolor', (1, 1, 1, 0))
-    matplotlib.rc('figure', facecolor='none')  # (1, 1, 1, 0))
-
 def split_data(I, Q, labels, training_fraction, rep_list):
     new_timestep_idcs = [0] + np.cumsum(rep_list).tolist()
     validation_idcs = list()
@@ -157,6 +168,17 @@ def split_data(I, Q, labels, training_fraction, rep_list):
     return train_x, train_y, valid_x, valid_y
 
 def split_data_same_each_time(I, Q, labels, training_fraction, num_features, prep_state_encoding=None, start_idx=0):
+    """
+    Splits the features and labels into training and validation datasets.
+    :param I: voltage records of in-phase quadrature
+    :param Q: voltage records of out of phase quadrature, may be omitted if num_features = 1
+    :param labels: strong readout results at the end of each voltage record
+    :param training_fraction: float between 0 and 1, where 1 indicates all data is used for training, none for validation.
+    :param num_features: 2 for heterodyne, 1 for homodyne
+    :param prep_state_encoding: array of integers indicating the current prep state (one-hot encoded)
+    :param start_idx: Must be an integer. Change to select a different set of validation trajectories.
+    :return: training features, training labels, validation features, validation labels
+    """
     total_batch_size, sequence_length = np.shape(I)
     val_each_n = int(1 / (1 - training_fraction))
     all_idcs = np.arange(total_batch_size)
@@ -196,57 +218,21 @@ def split_data_same_each_time(I, Q, labels, training_fraction, num_features, pre
 
     return train_x, train_y, valid_x, valid_y
 
-def prep_state_encoding(n_levels, prep_state, **kwargs):
-    # Rename equivalent prep states
-    if prep_state == "g":
-        prep_state = "+Z"
-    if prep_state == "e":
-        prep_state = "-Z"
-
-    if n_levels == 2:
-        if prep_state in qubit_prep_dict.keys():
-            # Pull the prep state label from `qubit_prep_dict`, which is defined at the top.
-            prep_x = qubit_prep_dict[prep_state]["prep_x"]
-            prep_y = qubit_prep_dict[prep_state]["prep_y"]
-            prep_z = qubit_prep_dict[prep_state]["prep_z"]
-        elif prep_state is None:
-            # Determine the prep state based on the strong readout results at the first timestep
-            expX = kwargs['expX']
-            expY = kwargs['expY']
-            expZ = kwargs['expZ']
-            R0 = np.sqrt(expX[0] ** 2 + expY[0] ** 2 + expZ[0] ** 2)
-            X0 = expX[0] if R0 <= 1.0 else expX[0] / R0
-            Y0 = expY[0] if R0 <= 1.0 else expY[0] / R0
-            Z0 = expZ[0] if R0 <= 1.0 else expZ[0] / R0
-            px = 0.5 * (1 + X0)
-            py = 0.5 * (1 + Y0)
-            pz = 0.5 * (1 + Z0)
-            prep_x = [px, 1 - px]
-            prep_y = [py, 1 - py]
-            prep_z = [pz, 1 - pz]
-            print(f"Assumed prep state from strong RO results is: ({X0:.3f}, {Y0:.3f}, {Z0:.3f})")
-            print(f"Purity of measured prep state was {R0:.4f}.")
-            if R0 >= 1.0:
-                print(f"Prep state has been automatically scaled such that purity = 1.")
-        else:
-            raise ValueError(f"Prep state {prep_state} is not supported for qubits")
-    elif n_levels == 3:
-        if prep_state in qutrit_prep_dict.keys():
-            # Pull the prep state label from `qutrit_prep_dict`, which is defined at the top.
-            prep_z = qutrit_prep_dict[prep_state]["prep_z"]
-        elif prep_state is None:
-            # Determine the prep state based on the strong readout results at the first timestep
-            Pg = kwargs['Pg']
-            Pe = kwargs['Pe']
-            Pf = kwargs['Pf']
-            prep_z = [Pg[0], Pe[0], Pf[0]]
-        else:
-            raise ValueError(f"Prep state {prep_state} is not supported for qutrits")
-        prep_x = None
-        prep_y = None
-    return prep_x, prep_y, prep_z
-
 def get_data(data_dict, n_levels, axis, timesteps, prep_state_encoding=None, scaling=1.0, label_mask_value=-1, take_max=np.inf):
+    """
+    Converts the data_dict object to features and labels that are suitable for processing by the RNN
+    :param data_dict: dict = Data dictionary from `load_repackaged_data`
+    :param n_levels: int = 2 or 3
+    :param axis: str = measurement axis ('X', 'Y', or 'Z') only applies if `n_levels = 2`
+    :param timesteps:
+    :param prep_state_encoding: list = List of one-hot coded arrays for each prep state. The length of each array
+            should equal the number of prep states. Ex: [np.array([1, 0, 0]), np.array([0, 1, 0]), np.array(0, 0, 1)]
+            for a dataset with three prep states.
+    :param scaling: float. Features will be multiplied by this amount, such that they comply with the activation.
+    :param label_mask_value: int. If there are multiple measurement axes, encode missing information with this value.
+    :param take_max: float = Allows you to restrict the number of features from the dataset. Set to np.inf to take all.
+    :return: list of all I, Q voltage records, one-hot encoded labels, number of voltage records per sequence length
+    """
     raw_I = list()
     raw_Q = list()
     reps_per_timestep = list()
@@ -285,13 +271,23 @@ def get_data(data_dict, n_levels, axis, timesteps, prep_state_encoding=None, sca
                                                          [lmv, lmv, lmv, lmv, 0, 1]])
 
     elif n_levels == 3:
-        # For now, let's assume we have a single measurement axis and we encode (P0, P1, P2)
-        # For multiple measurement axes, we can always change the one-hot encoding below, for example for qubit
-        # measurement axis with 3 level support, change this to
-        # one_hot = [P0x, P1x, P2x, P0y, P1y, P2y, P0z, P1z, P2z] so the length of one_hot is 3 * n_meas_axes
-        one_hot = np.array([[1, 0, 0],
-                            [0, 1, 0],
-                            [0, 0, 1]])
+        if prep_state_encoding is None:
+            # For now, let's assume we have a single measurement axis and we encode (P0, P1, P2)
+            # For multiple measurement axes, we can always change the one-hot encoding below, for example for qubit
+            # measurement axis with 3 level support, change this to
+            # one_hot = [P0x, P1x, P2x, P0y, P1y, P2y, P0z, P1z, P2z] so the length of one_hot is 3 * n_meas_axes
+            one_hot = np.array([[1, 0, 0],
+                                [0, 1, 0],
+                                [0, 0, 1]])
+        else:
+            # If there are multiple prep states, we encode the measurement result in the final 3 elements of one_hot
+            # The first n elements are reserved for prep state encoding.
+            num_prep_states = len(prep_state_encoding)
+            one_hot = np.zeros((3, num_prep_states + 3))
+            one_hot[:, :num_prep_states] = np.tile(prep_state_encoding, (3, 1))
+            one_hot[:, num_prep_states:] = np.array([[1, 0, 0],
+                                                     [0, 1, 0],
+                                                     [0, 0, 1]])
 
     for k, t in enumerate(timesteps):
         strong_ro_results = data_dict[f't_{t}']['final_ro_results']
@@ -327,5 +323,35 @@ def get_data(data_dict, n_levels, axis, timesteps, prep_state_encoding=None, sca
     return raw_I, raw_Q, labels, reps_per_timestep
 
 def append_to_h5key(f, key, data):
+    """
+    Appends data to a key in an h5 file.
+    :param f: Handle to an h5 file from `with h5py.File(..., 'a') as f:`
+    :param key: Key in f you want to append the data to
+    :param data: numpy array that will be appended to existing data in f[key]
+    :return: None
+    """
     f[key].resize((f[key].shape[0] + data.shape[0]), axis=0)
     f[key][-data.shape[0]:] = data
+
+def pad_labels(labels, sequence_lengths, reps_per_timestep, mask_value):
+    """
+    Pads labels similar to feature padding which was done using tf.keras.preprocessing.sequence.pad_sequences
+    :param labels: array with labels from `get_data` in utils.
+    :param sequence_lengths: Array of unique sequence lengths for the data set.
+    :param reps_per_timestep: number of repetitions for each sequence length, from `get_data` in utils
+    :param mask_value: float or int to use when padding the labels. Do not use 0, 1 or 2.
+    :return: Padded labels
+    """
+    # n_labels depends on the one_hot encoding type. For example, for qubit data with three measurement axes,
+    # the length of one_hot = 2 * 3 = 6. However, for qutrit data with a single measurement axis, n_labels = 3 * 1 = 3
+    batch_size, n_labels = np.shape(labels)
+    sequence_length = np.max(sequence_lengths)
+    # Start with a filled array with mask values.
+    padded_labels = mask_value * np.ones((batch_size, sequence_length, n_labels))
+    cum_reps = 0
+    # Then replace the mask value with the appropriate label at the right time step.
+    for ts, r in zip(sequence_lengths, reps_per_timestep):
+        padded_labels[cum_reps:cum_reps + r, ts - 1, :] = labels[cum_reps:cum_reps + r, :]
+        cum_reps += r
+
+    return padded_labels

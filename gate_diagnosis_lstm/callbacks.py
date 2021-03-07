@@ -168,22 +168,43 @@ class LossTracker(tf.keras.callbacks.Callback):
         return L_readout, L_init_state[0], L_outside_sphere
 
     def qutrit_loss_components(self, y_true, y_pred):
-        assert np.shape(y_true) == np.shape(y_pred)
-        batch_size = np.shape(y_true)[0]
-        mask = (y_true != self.mask_value)
-        # print(np.shape(y_true), np.shape(mask))
-        pred_logits = np.reshape(y_pred[mask], (batch_size, 3))
-        true_probs = np.reshape(y_true[mask], (batch_size, 3))
-        # print(K.constant(pred_logits)[:10, :], K.constant(true_probs)[:10, :])
+        if self.num_prep_states > 1:
+            # Separate prep encoding from readout label encoding.
+            y_true_prep_encoding = y_true[..., :self.num_prep_states]
+            y_true_ro_results = y_true[..., self.num_prep_states:]
+            y_pred_prep_encoding = y_pred[..., :self.num_prep_states]
+            y_pred_ro_results = y_pred[..., self.num_prep_states:]
+        else:
+            y_true_ro_results = y_true
+            y_pred_ro_results = y_pred
+
+        assert np.shape(y_pred_ro_results) == np.shape(y_true_ro_results)
+        batch_size = np.shape(y_true_ro_results)[0]
+        mask = (y_true_ro_results != self.mask_value)
+        pred_logits = np.reshape(y_pred_ro_results[mask], (batch_size, 3))
+        true_probs = np.reshape(y_true_ro_results[mask], (batch_size, 3))
         CE = K.categorical_crossentropy(K.constant(true_probs), K.constant(pred_logits), from_logits=True)
-        # print(np.shape(CE))
-        # print(CE[:10])
         L_readout = np.sum(CE) / batch_size
 
-        init_z = tf.repeat(tf.constant([self.prep_z], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
-        init_z_pred = K.softmax(y_pred[:, 0, :])
+        # Penalize deviation from the known initial state at the first time step
+        # Do a softmax to get the predicted probabilities
+        if self.num_prep_states > 1:
+            mask = (y_true_prep_encoding != self.mask_value)
+            pred_encoding = np.reshape(y_pred_prep_encoding[mask], (batch_size, self.num_prep_states))
+            true_encoding = np.reshape(y_true_prep_encoding[mask], (batch_size, self.num_prep_states))
 
-        L_init_state = K.mean(K.sqrt(K.square(init_z - init_z_pred)))
+            # Find the initial x, y and z coordinates for each prep state.
+            init_z = true_encoding @ self.init_z
+        else:
+            init_z = self.init_z
+
+        # init_z = tf.repeat(tf.constant([self.prep_z], dtype=K.floatx()), repeats=K.cast(batch_size, "int32"), axis=0)
+        # init_z_pred = K.softmax(y_pred_ro_results[:, 0, :])
+        # L_init_state = K.mean(K.sqrt(K.square(init_z - init_z_pred)))
+
+        # This will enforce the x, y and z values of the prep state on the first sample.
+        init_z_pred = K.softmax(y_pred_ro_results[:, 0, :])
+        L_init_state = K.mean(K.sqrt(init_z - init_z_pred))
 
         return L_readout, L_init_state, 0.0
 

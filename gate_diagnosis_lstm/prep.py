@@ -6,9 +6,8 @@ from tqdm import tqdm
 console = Console()
 
 sys.path.append(r"/home/qnl/Git-repositories")
-from utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, dark_mode_compatible
-from utils import prep_state_encoding as pse
-from qutrit_lstm_network import pad_labels
+from utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, pad_labels
+from visualization import dark_mode_compatible
 
 dark_mode_compatible(dark_mode_color=r'#86888A')
 
@@ -66,7 +65,7 @@ for p, prep_key in tqdm(enumerate(prep_keys)):
             console.print(f"Warning: the qutrit RNN only supports 1 measurement axis (meas_Z). I found {num_meas_axes}",
                           style="bold red")
 
-        dZ = d['meas_Z']
+        dZ = d[prep_key]['meas_Z']
         Pg = np.array([np.sum(dZ[key]['final_ro_results'] == 0) / len(dZ[key]['final_ro_results']) for key in dZ.keys()])
         Pe = np.array([np.sum(dZ[key]['final_ro_results'] == 1) / len(dZ[key]['final_ro_results']) for key in dZ.keys()])
         Pf = np.array([np.sum(dZ[key]['final_ro_results'] == 2) / len(dZ[key]['final_ro_results']) for key in dZ.keys()])
@@ -117,13 +116,14 @@ for p, prep_key in tqdm(enumerate(prep_keys)):
                                                              dtype='float32', value=mask_value)
 
     batch_size, sequence_length = np.shape(padded_I)
-    # print(np.shape(labels))
-    # print(len(timesteps))
+    print("Labels", np.shape(labels))
+    print("Padded I", np.shape(padded_I))
+    print("Timesteps", len(timesteps))
     # Pad the labels such that they can be processed by the NN later
     # Note: this assumes the sequence lengths are the same for meas_+X, meas_+Y and meas_+Z datafiles.
     all_sequence_lengths = sequence_lengths.tolist() * num_meas_axes if n_levels == 2 else sequence_lengths
     padded_labels = pad_labels(labels, all_sequence_lengths, reps_per_timestep, mask_value)
-    # print(np.shape(padded_labels))
+    print("Padded labels", np.shape(padded_labels))
 
     # Split validation and data deterministically so we can compare results from run to run
     train_x, train_y, valid_x, valid_y = split_data_same_each_time(padded_I.astype(np.float32), padded_Q.astype(np.float32),
