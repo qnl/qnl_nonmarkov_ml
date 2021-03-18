@@ -11,11 +11,13 @@ from utils import dark_mode_compatible, load_settings, save_settings
 from qutrit_lstm_network import MultiTimeStep, make_a_pie, pairwise_softmax, get_xyz, get_histogram
 from qutrit_lstm_network import plot_qubit_verification, plot_qutrit_verification, plot_qubit_histogram, plot_qutrit_histogram
 import gc
+from yaml_handler import YamlHandler as YH
 
 # dark_mode_compatible(dark_mode_color=r'#86888A')
 
-yaml_file = r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml"
-settings = load_settings(yaml_file)
+yh = YH()
+# settings = yh.load_settings(r"settings.yaml", relative=True)
+settings = yh.load_settings(r"lstm_test/settings.yaml", relative=True)
 
 print(tf.config.experimental.list_physical_devices('CPU'))
 print(tf.config.experimental.list_physical_devices('GPU'))
@@ -111,10 +113,12 @@ if len(prep_states) == 1:
 #                                                    tf.TensorShape([valid_y.shape[1], valid_y.shape[2]])))
 # batched_dataset = ds.batch(mini_batch_size)
 
+
 console.print(valid_x.shape, valid_y.shape)
 
 # Initialize the model
 console.print("Creating model...", style="bold red")
+
 m = MultiTimeStep(valid_x, valid_y, prep_states, n_levels,
                   data_points_for_prep_state=data_points_for_prep_state,
                   prep_state_from_ro=prep_state_from_ro,
@@ -131,7 +135,7 @@ m.learning_rate_epoch_constant = settings['training']['learning_rate_epoch_const
 
 settings['analysis']['subdir'] = m.savepath
 settings['analysis']['trajectory_dt'] = float(dt)
-save_settings(yaml_file, settings)
+save_settings(yh.yaml_file, settings)
 
 # Check if the training data is equally distributed: whether it has equal number of sequence lengths and meas. axes
 make_a_pie(all_time_series_lengths, "All data - sequence lengths", savepath=m.savepath)
@@ -144,7 +148,7 @@ gc.collect()
 # Copy the script to the analysis folder to keep track of settings
 this_script = "train.py"
 copyfile(this_script, os.path.join(m.savepath, this_script))
-copyfile(yaml_file, os.path.join(m.savepath, os.path.split(yaml_file)[-1]))
+copyfile(yh.yaml_file, os.path.join(m.savepath, os.path.split(yh.yaml_file)[-1]))
 
 # Plot the learning rate settings etc.
 epochs = np.arange(total_epochs)
@@ -173,6 +177,7 @@ console.print("Building model...", style="bold red")
 m.build_model()
 console.print("Compiling model...", style="bold red")
 m.compile_model()
+console.print("Model compiled", style='bold green')
 if n_levels == 2:
     m.get_expected_accuracy()
 m.init_learning_rate = 1e-3

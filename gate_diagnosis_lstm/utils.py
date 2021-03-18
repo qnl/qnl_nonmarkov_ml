@@ -1,7 +1,10 @@
 import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
-import h5py, yaml
+import h5py
+import yaml
+import os
+import copy
 
 x_color = plt.cm.Reds(0.6)
 y_color = plt.cm.Blues(0.6)
@@ -45,8 +48,16 @@ qutrit_prep_dict = {"+X": {"prep_z": [0.5, 0.5, 0.0]},
                     "-Z": {"prep_z": [0.0, 1.0, 0.0]},
                     "f": {"prep_z": [0.0, 0.0, 1.0]}}
 
-def load_settings(yaml_path):
-    with open(yaml_path) as file:
+
+def load_settings(yaml_path, relative=False):
+
+    if relative:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        yaml_path_ = os.path.join(dir_path, yaml_path)
+    else:
+        yaml_path_ = yaml_path
+
+    with open(yaml_path_) as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
     return data
 
@@ -59,7 +70,7 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin()
     return idx
 
-def load_repackaged_data(filename, multi_prep_state=False):
+def load_repackaged_data(filename, multi_prep_state=False, verbose_xyzs=False):
     """
     Load the h5 file produced by filtering.repackage_raw_data
     :param filename: string, HDF5 Filename including the file extension
@@ -79,33 +90,55 @@ def load_repackaged_data(filename, multi_prep_state=False):
                 meas_axes = list(f[prep_state].keys())
                 xyzs = [x[-1:] for x in meas_axes]
 
-                for xyz, meas_axis in zip(xyzs, meas_axes):
-                    timesteps = np.sort([int(key[2:]) for key in list(f[prep_state][f'meas_{xyz}'].keys()) if key[:2] == 't_'])
+                # get data for different measurement axes labels
+                # if verbose_xyzs is False, will look for 'meas_X', 'meas_Y', ...
+                # if it's true, it will get everything after the underscore in the measurement file
+                # originally designed for CR measurement data with meas keys of the form 'meas_C+X_T+X', ...
+                if verbose_xyzs:
+                    xyzs_in = [x.split('_', 1)[-1] for x in meas_axes]
+                else:
+                    xyzs_in = copy.deepcopy(xyzs)
+
+                for xyz, xyz_in, meas_axis in zip(xyzs, xyzs_in, meas_axes):
+                    # print(list(f[prep_state][f'meas_{xyz_in}'].keys()))
+                    timesteps = np.sort([int(key[2:]) for key in list(f[prep_state][f'meas_{xyz_in}'].keys()) if key[:2] == 't_'])
                     return_dict[prep_state][f'meas_{xyz}'] = {}
 
                     for n in timesteps:
                         return_dict[prep_state][f'meas_{xyz}'][f't_{n}'] = {}
-                        for key in f[prep_state][f'meas_{xyz}'][f't_{n}'].keys():
+                        for key in f[prep_state][f'meas_{xyz_in}'][f't_{n}'].keys():
                             if key in ['cutoff_freq', 'dt_binned', 'dt_unbinned', 'dt_filtered']:
-                                return_dict[prep_state][f'meas_{xyz}'][f't_{n}'][key] = f[prep_state][f'meas_{xyz}'][f't_{n}'][key][()]
+                                return_dict[prep_state][f'meas_{xyz}'][f't_{n}'][key] = f[prep_state][f'meas_{xyz_in}'][f't_{n}'][key][()]
                             else:
-                                return_dict[prep_state][f'meas_{xyz}'][f't_{n}'][key] = f[prep_state][f'meas_{xyz}'][f't_{n}'][key][:]
+                                return_dict[prep_state][f'meas_{xyz}'][f't_{n}'][key] = f[prep_state][f'meas_{xyz_in}'][f't_{n}'][key][:]
         else:
             # Old data structure with one single prep state in the h5 file.
             meas_axes = list(f.keys())
             xyzs = [x[-1:] for x in meas_axes]
 
-            for xyz, meas_axis in zip(xyzs, meas_axes):
-                timesteps = np.sort([int(key[2:]) for key in list(f[f'meas_{xyz}'].keys()) if key[:2] == 't_'])
+            # get data for different measurement axes labels
+            # if verbose_xyzs is False, will look for 'meas_X', 'meas_Y', ...
+            # if it's true, it will get everything after the underscore in the measurement file
+            # originally designed for CR measurement data with meas keys of the form 'meas_C+X_T+X', ...
+            if verbose_xyzs:
+                xyzs_in = [x.split('_', 1)[-1] for x in meas_axes]
+            else:
+                xyzs_in = copy.deepcopy(xyzs)
+
+            for xyz, xyz_in, meas_axis in zip(xyzs, xyzs_in, meas_axes):
+                print(xyz_in)
+                print(list(f.keys()))
+                print(list(f[f'meas_{xyz_in}'].keys()))
+                timesteps = np.sort([int(key[2:]) for key in list(f[f'meas_{xyz_in}'].keys()) if key[:2] == 't_'])
                 return_dict[f'meas_{xyz}'] = {}
 
                 for n in timesteps:
                     return_dict[f'meas_{xyz}'][f't_{n}'] = {}
-                    for key in f[f'meas_{xyz}'][f't_{n}'].keys():
+                    for key in f[f'meas_{xyz_in}'][f't_{n}'].keys():
                         if key in ['cutoff_freq', 'dt_binned', 'dt_unbinned', 'dt_filtered']:
-                            return_dict[f'meas_{xyz}'][f't_{n}'][key] = f[f'meas_{xyz}'][f't_{n}'][key][()]
+                            return_dict[f'meas_{xyz}'][f't_{n}'][key] = f[f'meas_{xyz_in}'][f't_{n}'][key][()]
                         else:
-                            return_dict[f'meas_{xyz}'][f't_{n}'][key] = f[f'meas_{xyz}'][f't_{n}'][key][:]
+                            return_dict[f'meas_{xyz}'][f't_{n}'][key] = f[f'meas_{xyz_in}'][f't_{n}'][key][:]
 
     return return_dict
 

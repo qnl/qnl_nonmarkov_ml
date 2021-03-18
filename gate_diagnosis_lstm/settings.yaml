@@ -11,11 +11,11 @@ analysis:
     - 100000.0
     - 0.0
     omega_fixed: true
-  subdir: /media/qnl/Extreme SSD/Gate diagnosis/2020_11_19/SQG_RNN_1000_ns_err_amp_0.0000_leakage_ratio_0.00/analysis/210212_132157_all_prep_states_dt_2ns
+  subdir: /run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_03_12/cr_trajectories_test_037/transfer_0/analysis/210318_145444_prep_C+X_T+Y
   sweep_time: false
   t_max: null
   t_min: null
-  trajectory_dt: 2.0e-09
+  trajectory_dt: 3.0000000000000004e-08
   x_for_yz_fit: null
   y_for_xz_fit: null
   z_for_xy_fit: null
@@ -33,7 +33,7 @@ training:
   annealing_steps: 2
   bidirectional: false
   epochs_per_anneal: 8
-  experiment_id: all_prep_states_dt_2ns
+  experiment_id: prep_C+X_T+Y
   learning_rate_epoch_constant: 3
   learning_rate_init: 0.001
   learning_rate_reduce_after: 0
@@ -42,14 +42,12 @@ training:
   mini_batch_size: 512
   prep_state_from_ro: true
 voltage_records:
-  data_points_for_prep_state: 20
-  filename: all_prep_states_dt_2ns_meas_XYZ.h5
-  filepath: /media/qnl/Extreme SSD/Gate diagnosis/2020_11_19/SQG_RNN_1000_ns_err_amp_0.0000_leakage_ratio_0.00
+  data_points_for_prep_state: 0
+  filename: cr_037_prep_C+Y_T+Y.h5
+  filepath: /run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_03_12/cr_trajectories_test_037/transfer_0
   multiple_prep_states: true
   n_levels: 2
   num_features: 2
   prep_states:
-  - g
-  - e
-  - +Y
-  - -Y
+  - C+Y_T+Y
+  verbose_xyzs: true

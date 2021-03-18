@@ -245,7 +245,11 @@ class MultiTimeStep():
                 self.model.compile(loss=self.qubit_multi_prep_loss_function, optimizer=optimizer,
                                    metrics=[self.masked_multi_prep_accuracy])
             else:
-                self.model.compile(loss=self.qubit_loss_function, optimizer=optimizer, metrics=[self.masked_accuracy])
+                self.model.compile(
+                loss=self.qubit_loss_function,
+                optimizer=optimizer,
+                metrics=[self.masked_accuracy],
+                                   )
         if self.n_levels == 3:
             self.model.compile(loss=self.qutrit_loss_function, optimizer=optimizer, metrics=[self.masked_accuracy])
 
@@ -415,7 +419,10 @@ class MultiTimeStep():
         lagrange_2 = tf.constant(1.0, dtype=K.floatx())
         lagrange_3 = tf.constant(1.0, dtype=K.floatx())
 
-        return lagrange_1 * L_readout + lagrange_2 * L_init_state[0] + lagrange_3 * K.mean(L_outside_sphere)
+        loss = lagrange_1 * L_readout + lagrange_2 * L_init_state[0] + lagrange_3 * K.mean(L_outside_sphere)
+        # loss = L_readout
+
+        return loss
 
     def qutrit_loss_function(self, y_true, y_pred):
         batch_size = K.cast(K.shape(y_true)[0], K.floatx())

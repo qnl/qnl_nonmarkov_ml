@@ -3,16 +3,17 @@ import numpy as np
 import tensorflow as tf
 from rich.console import Console
 from tqdm import tqdm
-console = Console()
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, dark_mode_compatible
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.utils import prep_state_encoding as pse
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.qutrit_lstm_network import pad_labels
+from yaml_handler import YamlHandler as YH
 
-sys.path.append(r"/home/qnl/Git-repositories")
-from utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, dark_mode_compatible
-from utils import prep_state_encoding as pse
-from qutrit_lstm_network import pad_labels
+console = Console()
 
 dark_mode_compatible(dark_mode_color=r'#86888A')
 
-settings = load_settings(r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml")
+yh = YH()
+settings = yh.load_settings(r"settings.yaml", relative=True)
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
@@ -26,6 +27,7 @@ num_features = settings['voltage_records']['num_features'] # I and Q
 multiple_prep_states = settings['voltage_records']['multiple_prep_states']
 n_levels = settings['voltage_records']['n_levels']
 data_points_for_prep_state = settings['voltage_records']['data_points_for_prep_state']
+verbose_xyzs = settings['voltage_records']['verbose_xyzs']
 
 # Compressing the saved h5 file can save up to an order of magnitude of disk space, but unzipping may take a long time.
 if settings['prep']['compress_output_file']:
@@ -36,7 +38,7 @@ else:
 console.print("Loading data...", style="bold red")
 
 # Load the data from the h5 file
-d = load_repackaged_data(os.path.join(filepath, filename), multi_prep_state=multiple_prep_states)
+d = load_repackaged_data(os.path.join(filepath, filename), multi_prep_state=multiple_prep_states, verbose_xyzs=verbose_xyzs)
 if multiple_prep_states:
     prep_states = settings['voltage_records']['prep_states'] #[prep_key for prep_key in d.keys() if "prep" in prep_key]
     prep_keys = [f"prep_{key}" for key in prep_states]
@@ -71,7 +73,9 @@ for p, prep_key in tqdm(enumerate(prep_keys)):
         Pe = np.array([np.sum(dZ[key]['final_ro_results'] == 1) / len(dZ[key]['final_ro_results']) for key in dZ.keys()])
         Pf = np.array([np.sum(dZ[key]['final_ro_results'] == 2) / len(dZ[key]['final_ro_results']) for key in dZ.keys()])
 
-    dt = dZ['t_0']['dt_filtered']
+    dt = dZ['t_1']['dt_filtered']
+    # dt = dZ['t_0']['dt_filtered']
+
     timesteps = np.sort([int(key[2:]) for key in list(dZ.keys()) if key[:2] == 't_'])
     # Create the list of strong readout times
     Tm = np.array([np.round(dZ[f't_{ts}']['time_axis_filtered'][-1], decimals=9) for ts in timesteps])
