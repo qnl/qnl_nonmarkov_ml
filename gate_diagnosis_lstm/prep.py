@@ -1,17 +1,12 @@
-import sys, os, h5py
+import os, h5py
 import numpy as np
 import tensorflow as tf
 from rich.console import Console
 from tqdm import tqdm
+from utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, pad_labels
 console = Console()
 
-sys.path.append(r"/home/qnl/Git-repositories")
-from utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, pad_labels
-from visualization import dark_mode_compatible
-
-dark_mode_compatible(dark_mode_color=r'#86888A')
-
-settings = load_settings(r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml")
+settings = load_settings(r"settings.yaml")
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
@@ -37,7 +32,7 @@ console.print("Loading data...", style="bold red")
 # Load the data from the h5 file
 d = load_repackaged_data(os.path.join(filepath, filename), multi_prep_state=multiple_prep_states)
 if multiple_prep_states:
-    prep_states = settings['voltage_records']['prep_states'] #[prep_key for prep_key in d.keys() if "prep" in prep_key]
+    prep_states = settings['voltage_records']['prep_states']
     prep_keys = [f"prep_{key}" for key in prep_states]
     num_prep_states = len(prep_states)
     num_meas_axes = len([meas_key for meas_key in d[prep_keys[0]].keys() if "meas" in meas_key])

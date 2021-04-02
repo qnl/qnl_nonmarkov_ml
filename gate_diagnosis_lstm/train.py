@@ -1,4 +1,4 @@
-import os, h5py
+import os, h5py, time
 import numpy as np
 import tensorflow as tf
 from shutil import copyfile
@@ -9,11 +9,9 @@ console = Console()
 import matplotlib.pyplot as plt
 from utils import load_settings, save_settings
 from qutrit_lstm_network import MultiTimeStep
-from visualization import plot_qubit_histogram, plot_qutrit_histogram, make_a_pie, get_histogram, dark_mode_compatible
+from visualization import plot_qubit_histogram, plot_qutrit_histogram, make_a_pie, get_histogram
 from verification import plot_qubit_verification, plot_qutrit_verification, pairwise_softmax, get_xyz
 import gc
-
-# dark_mode_compatible(dark_mode_color=r'#86888A')
 
 yaml_file = r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml"
 settings = load_settings(yaml_file)
@@ -91,28 +89,6 @@ if len(prep_states) == 1:
     valid_x = valid_x[..., :-1]
     valid_y = valid_y[..., 1:]
 
-# Construct Tensorflow dataset. Note: this was used as a test to avoid loading large datasets into memory
-# However, the overhead of loading these datasets reduced the training speed by a huge amount.
-# Not advised to use this again, but the code here does work.
-# class generator:
-#     def __init__(self):
-#         self.file = os.path.join(filepath, settings['prep']['output_filename'])
-#         self.training_data = True
-#
-#     def __call__(self):
-#         with h5py.File(self.file, 'r') as f:
-#             if self.training_data:
-#                 for train_x, train_y in zip(f["train_x"], f["train_y"]):
-#                     yield train_x, train_y
-#                     # yield np.expand_dims(train_x, axis=0), np.expand_dims(train_y, axis=0)
-#             else:
-#                 for valid_x, valid_y in zip(f["valid_x"], f["valid_y"]):
-#                     yield np.expand_dims(valid_x, axis=0), np.expand_dims(valid_y, axis=0)
-#
-# ds = tf.data.Dataset.from_generator(generator(), output_types=(tf.float32, tf.float32),
-#                                     output_shapes=(tf.TensorShape([valid_x.shape[1], valid_x.shape[2]]),
-#                                                    tf.TensorShape([valid_y.shape[1], valid_y.shape[2]])))
-# batched_dataset = ds.batch(mini_batch_size)
 
 console.print(valid_x.shape, valid_y.shape)
 
@@ -126,7 +102,7 @@ m = MultiTimeStep(valid_x, valid_y, prep_states, n_levels,
                   savepath=model_savepath, experiment_name=experiment_name, bidirectional=bidirectional,
                   **avgd_strong_ro_results)
 
-del valid_x, valid_y
+del valid_x, valid_y # Garbage collection
 
 m.init_learning_rate = settings['training']['learning_rate_init']
 m.reduce_learning_rate_after = settings['training']['learning_rate_reduce_after']
@@ -182,10 +158,13 @@ m.init_learning_rate = 1e-3
 
 plt.close('all')
 
+t_start = time.time()
 # Start the training
 console.print("Training started...", style="bold red")
 # history = m.fit_model_with_generator(batched_dataset, total_epochs)
 history = m.fit_model(train_x, train_y)
+t_stop = time.time()
+console.print(f"Training completed in {(t_stop - t_start) / 60 :.2f} min", style="bold red")
 gc.collect()
 
 m.plot_history(history)

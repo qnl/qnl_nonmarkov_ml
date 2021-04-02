@@ -5,9 +5,6 @@ import numpy as np
 import os
 from utils import save_options
 
-cmap = plt.get_cmap('Accent')
-zero_color, one_color, two_color = [cmap.colors[z] for z in range(3)]
-
 def dark_mode_compatible(dark_mode_color=r'#86888A'):
     """
     Set the plotting style to dark mode, which works well on dark backgrounds but is also

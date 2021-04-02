@@ -1,4 +1,3 @@
-import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
 import h5py, yaml
@@ -6,6 +5,18 @@ import h5py, yaml
 x_color = plt.cm.Reds(0.6)
 y_color = plt.cm.Blues(0.6)
 z_color = plt.cm.Greys(0.6)
+
+cmap = plt.get_cmap('Accent')
+zero_color, one_color, two_color = [cmap.colors[z] for z in range(3)]
+
+Id = np.array([[1, 0],
+               [0, 1]], dtype=np.complex)
+sigmaX = np.array([[0, 1],
+                   [1, 0]], dtype=np.complex)
+sigmaY = np.array([[0, -1j],
+                   [1j, 0]], dtype=np.complex)
+sigmaZ = np.array([[1, 0],
+                   [0, -1]], dtype=np.complex)
 
 save_options = {"dpi" : 200,
                 "bbox_inches" : "tight",
@@ -68,6 +79,20 @@ def save_settings(yaml_path, settings_dict):
     """
     with open(yaml_path, 'w') as file:
         yaml.dump(settings_dict, file, sort_keys=True)
+
+def greek(letter):
+    """
+    Returns the unicode string of the greek letter corresponding to "letter"
+    :param letter: string, such as 'alpha'
+    :return: unicode string of the green letter
+    """
+    lookup = {'alpha': 945, 'Alpha': 913, 'beta': 946, 'Beta': 914, 'gamma': 947, 'Gamma': 915,
+              'delta': 948, 'Delta': 916, 'epsilon': 949, 'Epsilon': 917, 'zeta': 950, 'Zeta': 918,
+              'eta': 951, 'theta': 952, 'Theta': 920, 'kappa': 954, 'Kappa': 922, 'lambda': 955, 'Lambda': 923,
+              'mu': 956, 'nu': 957, 'xi': 958, 'pi': 960, 'Pi': 928, 'rho': 961, 'sigma': 963, 'Sigma': 931,
+              'tau': 964, 'phi': 966, 'Phi': 934, 'chi': 967, 'Chi':935, 'psi': 968, 'Psi':936,
+              'omega': 969, 'Omega': 937}
+    return chr(lookup[letter])
 
 def find_nearest(array, value):
     """
