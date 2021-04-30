@@ -7,14 +7,15 @@ from rich.console import Console
 from scipy.special import softmax
 console = Console()
 import matplotlib.pyplot as plt
-from utils import dark_mode_compatible, load_settings, save_settings
-from qutrit_lstm_network import MultiTimeStep, make_a_pie, pairwise_softmax, get_xyz, get_histogram
-from qutrit_lstm_network import plot_qubit_verification, plot_qutrit_verification, plot_qubit_histogram, plot_qutrit_histogram
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.utils import dark_mode_compatible, load_settings, save_settings
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.qutrit_lstm_network import MultiTimeStep, make_a_pie, pairwise_softmax, get_xyz, get_histogram
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.qutrit_lstm_network import plot_qubit_verification, plot_qutrit_verification, plot_qubit_histogram, plot_qutrit_histogram
 import gc
 
 # dark_mode_compatible(dark_mode_color=r'#86888A')
 
-yaml_file = r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml"
+# yaml_file = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/code/qnl_nonmarkov_ml/gate_diagnosis_lstm/lstm_test/settings.yaml"
+yaml_file = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/code/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml"
 settings = load_settings(yaml_file)
 
 print(tf.config.experimental.list_physical_devices('CPU'))
@@ -173,6 +174,7 @@ console.print("Building model...", style="bold red")
 m.build_model()
 console.print("Compiling model...", style="bold red")
 m.compile_model()
+console.print("Model compiled", style='bold green')
 if n_levels == 2:
     m.get_expected_accuracy()
 m.init_learning_rate = 1e-3

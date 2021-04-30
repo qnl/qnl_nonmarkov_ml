@@ -47,12 +47,17 @@ qutrit_prep_dict = {"+X": {"prep_z": [0.5, 0.5, 0.0]},
 
 def load_settings(yaml_path):
     with open(yaml_path) as file:
-        data = yaml.load(file, Loader=yaml.FullLoader)
+        data = yaml.load(file,
+                         # Loader=yaml.FullLoader,
+                         Loader=yaml.SafeLoader,
+                         )
     return data
 
 def save_settings(yaml_path, settings_dict):
     with open(yaml_path, 'w') as file:
-        yaml.dump(settings_dict, file, sort_keys=True)
+        yaml.dump(settings_dict, file,
+                  # sort_keys=True,
+                  )
 
 def find_nearest(array, value):
     array = np.asarray(array)
@@ -96,6 +101,7 @@ def load_repackaged_data(filename, multi_prep_state=False):
             xyzs = [x[-1:] for x in meas_axes]
 
             for xyz, meas_axis in zip(xyzs, meas_axes):
+                print(f'Available keys: {list(f.keys())}')
                 timesteps = np.sort([int(key[2:]) for key in list(f[f'meas_{xyz}'].keys()) if key[:2] == 't_'])
                 return_dict[f'meas_{xyz}'] = {}
 

@@ -10,15 +10,17 @@ from qnl_trajectories.analysis.utils import greek
 from qnl_trajectories.analysis.nn_plotting import *
 from qnl_trajectories import x_color, y_color, z_color, Id, sigmaX, sigmaY, sigmaZ
 
-from utils import *
-from qutrit_lstm_network import *
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.utils import *
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.qutrit_lstm_network import *
 from rich import print
 from rich.console import Console
 console = Console()
 
-dark_mode_compatible(dark_mode_color=r'#86888A')
+# dark_mode_compatible(dark_mode_color=r'#86888A')
 
-settings = load_settings(r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml")
+# settings = load_settings(r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml")
+yaml_file = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/code/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml"
+settings = load_settings(yaml_file)
 
 datapath = settings['voltage_records']['filepath'] # Path of the data
 dataname = settings['voltage_records']['filename'] # Filename of h5 file used to feed into prep.py
@@ -38,9 +40,16 @@ omega_fixed = settings['analysis']['hamiltonian_map']['omega_fixed']
 t_min = settings['analysis']['t_min']
 t_max = settings['analysis']['t_max']
 
-sweep_time = settings['analysis']['sweep_time'] # Bin the trajectories in time to fit parameters as function of time.
+sweep_time = settings['analysis']['sweep_time']['sweep_time'] # Bin the trajectories in time to fit parameters as function of time.
 time_window = 0.2e-6 # Use this time window when sweep_time = True
-t_mins = np.linspace(0.4e-6, 6.8e-6, 1 + np.int(np.round((6.8e-6 - 0.4e-6) / time_window))) # Left side of the time window
+
+plot_average = settings.get('analysis/sweep_time/plot_average')
+running_sweep = settings.get('analysis/sweep_time/running_sweep')
+if running_sweep:
+    t_mins = np.linspace(0.4e-6, 3.8e-6,
+                         1 + np.int(np.round((6.8e-6 - 0.4e-6) / 5e-9)))  # Left side of the time window
+else:
+    t_mins = np.linspace(0.4e-6, 3.8e-6, 1 + np.int(np.round((6.8e-6 - 0.4e-6) / time_window))) # Left side of the time window
 t_maxs = t_mins + time_window # Right side of the time window
 
 x_for_yz_fit = settings['analysis']['x_for_yz_fit'] # Keep None if you don't want to select on the x coordinate
@@ -66,7 +75,8 @@ for k, p in enumerate(prep_states):
     expY = 1 - 2 * Py
     expZ = 1 - 2 * Pz
 
-    dt = dZ['t_0']['dt_binned']
+    # dt = dZ['t_0']['dt_binned']
+    dt = dZ['t_1']['dt_binned']
     timesteps = np.sort([int(key[2:]) for key in list(dZ.keys()) if key[:2] == 't_'])
     # Sequence lengths to process for the quiver maps, in units of trajectory dt
     Tm = np.array([np.round(dZ[f't_{ts}']['time_axis_filtered'][-1], decimals=9) for ts in timesteps])
@@ -202,7 +212,8 @@ for k, p in enumerate(prep_states):
 
     # Bin trajectories in the YZ plane, now taking into account trained trajectories of all lengths
     yz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="Y",
-                               main_group=f'prep_{p}', #prefix=f"prep_{p}/predictions",
+                               main_group=f'prep_{p}',
+                               # prefix=f"prep_{p}/predictions",
                                vertical_axis="Z", other_coordinate=x_for_yz_fit, t_min=t_min, t_max=t_max,
                                derivative_order=derivative_order)
     y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, eig1, eig2 = yz_output
@@ -222,7 +233,8 @@ for k, p in enumerate(prep_states):
     # Repeat the same procedure for the XY plane
     console.print(f"Making xy quiver plots", style="bold green")
     xy_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="X",
-                               main_group=f'prep_{p}', #prefix=f"prep_{p}/predictions",
+                               main_group=f'prep_{p}',
+                               # prefix=f"prep_{p}/predictions",
                                vertical_axis="Y", other_coordinate=z_for_xy_fit, t_min=t_min, t_max=t_max,
                                derivative_order=derivative_order)
     x_bin_centers, y_bin_centers, mean_binned_dX, mean_binned_dY, eig1, eig2 = xy_output
@@ -238,7 +250,8 @@ for k, p in enumerate(prep_states):
     # Repeat the same procedure for the xz plane
     console.print(f"Making xz quiver plots", style="bold green")
     xz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="X",
-                               main_group=f'prep_{p}',  #prefix=f"prep_{p}/predictions",
+                               main_group=f'prep_{p}',
+                               # prefix=f"prep_{p}/predictions",
                                vertical_axis="Z", other_coordinate=y_for_xz_fit, t_min=t_min, t_max=t_max,
                                derivative_order=derivative_order)
     x_bin_centers, z_bin_centers, mean_binned_dX, mean_binned_dZ, eig1, eig2 = xz_output
@@ -253,63 +266,76 @@ for k, p in enumerate(prep_states):
 
     plt.close('all')
 #
-# omegas = []
-# gammas = []
-# domegas = []
-# dgammas = []
-#
-# if sweep_time:
-#     console.print("Sweeping over time axis", style="bold red")
-#     # fig = plt.figure(figsize=(14, 14))
-#     k = 0
-#
-#     if not(os.path.exists(os.path.join(filepath, 'traj_swarm'))):
-#         os.mkdir(os.path.join(filepath, 'traj_swarm'))
-#
-#     # Grid spacing for the time sweep
-#     d_bin = settings['analysis']['bin_size']
-#     x_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
-#     y_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
-#     z_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
-#
-#     for t_min, t_max in tqdm(zip(t_mins, t_maxs)):
-#         try:
-#             yz_output = calculate_drho([filepath], x_bins, y_bins, z_bins, seq_lengths, horizontal_axis="Y",
-#                                        vertical_axis="Z", other_coordinate=x_for_yz_fit, t_min=t_min, t_max=t_max,
-#                                        derivative_order=derivative_order)
-#             y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, eig1, eig2 = yz_output
-#
-#             fr, ferr = plot_and_fit_hamiltonian(y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, dt,
-#                                                 theta=ROTATION_ANGLE, savepath=os.path.join(filepath, 'traj_swarm'),
-#                                                 fit_guess=fit_guess, axis_identifier='yz', plot=True, ax_fig=None,
-#                                                 fit=True, fix_omega=omega_fixed,
-#                                                 arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'])
-#
-#             omegas.append(fr[1] / (2 * np.pi))
-#             gammas.append(fr[0] / (2 * np.pi))
-#             domegas.append(ferr[1] / (2 * np.pi))
-#             dgammas.append(ferr[0] / (2 * np.pi))
-#         except:
-#             omegas.append(np.inf)
-#             gammas.append(np.inf)
-#             domegas.append(np.inf)
-#             dgammas.append(np.inf)
-#
-#     # fit_results = np.array(fit_results)
-#     # yerr = fit_results * np.sqrt((ferr[0]/fr[0])**2 + (ferr[1]/fr[1])**2)
-#     fig = plt.figure()
-#     plt.errorbar(0.5 * (t_mins + t_maxs) * 1e6, np.array(omegas) / (1e6), yerr=np.array(domegas)/1e6, color='gray',
-#                  fmt='o', label=f"{greek('Omega')}/2{greek('pi')} (instantaneous)")
-#     plt.hlines(fr_all_times[1] / (2 * np.pi * 1e6), 0, np.max(t_maxs)*1e6, linestyles='--', color='gray',
-#                label=f"{greek('Omega')}/2{greek('pi')} (all trajectories)")
-#
-#     plt.errorbar(0.5 * (t_mins + t_maxs) * 1e6, np.array(gammas) / (1e6), yerr=np.array(dgammas)/1e6,
-#                  color=plt.cm.Blues(0.6), fmt='o', label=f"{greek('Gamma')}/2{greek('pi')} (instantaneous)")
-#     plt.hlines(fr_all_times[0] / (2 * np.pi * 1e6), 0, np.max(t_maxs)*1e6, linestyles='--', color=plt.cm.Blues(0.6),
-#                label=f"{greek('Gamma')}/2{greek('pi')} (all trajectories)")
-#
-#     plt.xlim(0, np.max(t_maxs) * 1e6)
-#     plt.xlabel(f"Time ({greek('mu')}s)")
-#     plt.ylabel(f"{greek('Omega')}/2{greek('pi')}, {greek('Gamma')}/2{greek('pi')} (MHz)")
-#     plt.legend(loc=0, frameon=False)
-#     fig.savefig(os.path.join(filepath, "001_traj_hamiltonian_fit_vs_time.png"), **settings['figure_options'])
+omegas = []
+gammas = []
+domegas = []
+dgammas = []
+
+if sweep_time:
+    console.print("Sweeping over time axis", style="bold red")
+    # fig = plt.figure(figsize=(14, 14))
+    k = 0
+
+    if not(os.path.exists(os.path.join(filepath, 'traj_swarm'))):
+        os.mkdir(os.path.join(filepath, 'traj_swarm'))
+
+    # Grid spacing for the time sweep
+    d_bin = settings['analysis']['bin_size']
+    x_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
+    y_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
+    z_bins = np.arange(-1.0, 1.0 + d_bin, d_bin)
+
+    for t_min, t_max in tqdm(zip(t_mins, t_maxs)):
+        try:
+            yz_output = calculate_drho(
+                [filepath],
+                x_bins,
+                y_bins,
+                z_bins,
+                seq_lengths,
+                horizontal_axis="Y",
+                vertical_axis="X",
+                other_coordinate=z_for_xy_fit,
+                t_min=t_min,
+                t_max=t_max,
+                derivative_order=derivative_order,
+                main_group=f'prep_{p}',
+                )
+            y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, eig1, eig2 = yz_output
+
+            fr, ferr = plot_and_fit_hamiltonian(y_bin_centers, z_bin_centers, mean_binned_dY, mean_binned_dZ, dt,
+                                                theta=ROTATION_ANGLE, savepath=os.path.join(filepath, 'traj_swarm'),
+                                                fit_guess=fit_guess, axis_identifier='xy', plot=True, ax_fig=None,
+                                                fit=True,
+                                                # fit=False,
+                                                fix_omega=omega_fixed,
+                                                arrow_length_multiplier=settings['analysis']['hamiltonian_map']['arrow_length_multiplier'])
+
+            omegas.append(fr[1] / (2 * np.pi))
+            gammas.append(fr[0] / (2 * np.pi))
+            domegas.append(ferr[1] / (2 * np.pi))
+            dgammas.append(ferr[0] / (2 * np.pi))
+        except:
+            omegas.append(np.inf)
+            gammas.append(np.inf)
+            domegas.append(np.inf)
+            dgammas.append(np.inf)
+
+    # fit_results = np.array(fit_results)
+    # yerr = fit_results * np.sqrt((ferr[0]/fr[0])**2 + (ferr[1]/fr[1])**2)
+    fig = plt.figure()
+    plt.errorbar(0.5 * (t_mins + t_maxs) * 1e6, np.array(omegas) / (1e6), yerr=np.array(domegas)/1e6, color='gray',
+                 fmt='o', label=f"{greek('Omega')}/2{greek('pi')} (instantaneous)")
+    plt.errorbar(0.5 * (t_mins + t_maxs) * 1e6, np.array(gammas) / (1e6), yerr=np.array(dgammas)/1e6,
+                 color=plt.cm.Blues(0.6), fmt='o', label=f"{greek('Gamma')}/2{greek('pi')} (instantaneous)")
+    if plot_average:
+        plt.hlines(fr_all_times[0] / (2 * np.pi * 1e6), 0, np.max(t_maxs)*1e6, linestyles='--', color=plt.cm.Blues(0.6),
+                   label=f"{greek('Gamma')}/2{greek('pi')} (all trajectories)")
+        plt.hlines(fr_all_times[1] / (2 * np.pi * 1e6), 0, np.max(t_maxs) * 1e6, linestyles='--', color='gray',
+                   label=f"{greek('Omega')}/2{greek('pi')} (all trajectories)")
+
+    plt.xlim(0, np.max(t_maxs) * 1e6)
+    plt.xlabel(f"Time ({greek('mu')}s)")
+    plt.ylabel(f"{greek('Omega')}/2{greek('pi')}, {greek('Gamma')}/2{greek('pi')} (MHz)")
+    plt.legend(loc=0, frameon=False)
+    fig.savefig(os.path.join(filepath, "001_traj_hamiltonian_fit_vs_time.png"), **settings['figure_options'])

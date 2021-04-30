@@ -10,15 +10,15 @@ from qnl_trajectories.analysis.utils import greek
 from qnl_trajectories.analysis.nn_plotting import *
 from qnl_trajectories import x_color, y_color, z_color, Id, sigmaX, sigmaY, sigmaZ
 
-from utils import *
-from qutrit_lstm_network import *
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.utils import *
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.qutrit_lstm_network import *
 from rich import print
 from rich.console import Console
 console = Console()
 
-dark_mode_compatible(dark_mode_color=r'#86888A')
-
-settings = load_settings(r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml")
+# dark_mode_compatible(dark_mode_color=r'#86888A')
+yaml_file = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/code/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml"
+settings = load_settings(yaml_file)
 
 datapath = settings['voltage_records']['filepath'] # Path of the data
 dataname = settings['voltage_records']['filename']
