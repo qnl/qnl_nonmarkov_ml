@@ -6,27 +6,24 @@ analysis:
     arrow_length_multiplier: 1.25
     fit_guess: [100000.0, 0.0]
     omega_fixed: false
-  subdir: /run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_03_12/cr_trajectories_test_037/transfer_0/analysis/210320_155311_prep_C+Y_T+Y_small_minibatch
-  sweep_time:
-    sweep_time: true
-    running_sweep: true
-    plot_average: false
+  subdir: /run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_04_27/cr_trajectories_test_040_slow-dynamics-monitor-control-2/analysis/210429_192939_prep_C+Y_T+Y_small_minibatch
+  sweep_time: {plot_average: false, running_sweep: true, sweep_time: true}
   t_max: null
   t_min: null
-  trajectory_dt: 3.0000000000000004e-08
+  trajectory_dt: 9.000000000000001e-08
   x_for_yz_fit: null
   y_for_xz_fit: null
   z_for_xy_fit: null
 figure_options: {bbox_inches: tight, dpi: 200, pad_inches: 0.05, transparent: true}
 prep: {compress_output_file: true, iq_scaling: 0.005, output_filename: training_validation_split.h5,
   training_validation_ratio: 0.9}
-training: {annealing_steps: 5, bidirectional: false, epochs_per_anneal: 15, experiment_id: prep_C+Y_T+Y_small_minibatch,
+training: {annealing_steps: 5, bidirectional: false, epochs_per_anneal: 15, experiment_id: prep_C+Y_T+Y,
   learning_rate_epoch_constant: 7, learning_rate_init: 0.001, learning_rate_reduce_after: 0,
   lstm_neurons: 32, mask_value: -1.0, mini_batch_size: 128, prep_state_from_ro: true}
 voltage_records:
   data_points_for_prep_state: 0
-  filename: cr_037_prep_C+Y_T+Y.h5
-  filepath: /run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_03_12/cr_trajectories_test_037/transfer_0
+  filename: cr_041_prep_C+Y_T+Y.h5
+  filepath: /run/media/qnl/Seagate Expansion Drive/non_markovian/local_data/2021_04_29/cr_trajectories_test_041_slow-dynamics-monitor-target
   multiple_prep_states: true
   n_levels: 2
   num_features: 2

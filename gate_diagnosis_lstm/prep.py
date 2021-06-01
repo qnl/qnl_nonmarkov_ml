@@ -5,14 +5,14 @@ from rich.console import Console
 from tqdm import tqdm
 console = Console()
 
-sys.path.append(r"/home/qnl/Git-repositories")
-from utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, dark_mode_compatible
-from utils import prep_state_encoding as pse
-from qutrit_lstm_network import pad_labels
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.utils import load_settings, load_repackaged_data, get_data, split_data_same_each_time, dark_mode_compatible
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.utils import prep_state_encoding as pse
+from qnl_nonmarkov_ml.gate_diagnosis_lstm.qutrit_lstm_network import pad_labels
 
 dark_mode_compatible(dark_mode_color=r'#86888A')
 
-settings = load_settings(r"/home/qnl/Git-repositories/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml")
+yaml_file = r"/home/qnl/noah/projects/2020-NonMarkovTrajectories/code/qnl_nonmarkov_ml/gate_diagnosis_lstm/settings.yaml"
+settings = load_settings(yaml_file)
 
 # NOTE: Note that most of the settings below must be equal to the settings in prep.py
 # Path that contains the training/validation dataset.
@@ -71,7 +71,8 @@ for p, prep_key in tqdm(enumerate(prep_keys)):
         Pe = np.array([np.sum(dZ[key]['final_ro_results'] == 1) / len(dZ[key]['final_ro_results']) for key in dZ.keys()])
         Pf = np.array([np.sum(dZ[key]['final_ro_results'] == 2) / len(dZ[key]['final_ro_results']) for key in dZ.keys()])
 
-    dt = dZ['t_0']['dt_filtered']
+    # dt = dZ['t_0']['dt_filtered']
+    dt = dZ['t_1']['dt_filtered']
     timesteps = np.sort([int(key[2:]) for key in list(dZ.keys()) if key[:2] == 't_'])
     # Create the list of strong readout times
     Tm = np.array([np.round(dZ[f't_{ts}']['time_axis_filtered'][-1], decimals=9) for ts in timesteps])
